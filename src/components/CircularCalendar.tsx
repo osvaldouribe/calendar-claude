@@ -70,20 +70,20 @@ function doyToLabel(doy: number, year: number) {
 
 // ── tokens ───────────────────────────────────────────────────────────────────
 const ELEMENT_COLOR: Record<string, string> = {
-  fire:  '#C8673A',
-  earth: '#7A9B5A',
-  air:   '#5B90C0',
-  water: '#4A6FA5',
+  fire:  '#C8673A',  // orange
+  earth: '#6A9B52',  // green
+  air:   '#4CA8C8',  // cyan-blue
+  water: '#6B50A8',  // indigo-violet
 };
 
 const ELEMENT_FILL: Record<string, string> = {
-  fire:  'rgba(200, 103, 58, 0.08)',
-  earth: 'rgba(122, 155, 90, 0.08)',
-  air:   'rgba(91, 144, 192, 0.08)',
-  water: 'rgba(74, 111, 165, 0.08)',
+  fire:  'rgba(200, 103, 58,  0.07)',
+  earth: 'rgba(106, 155, 82,  0.07)',
+  air:   'rgba(76,  168, 200, 0.07)',
+  water: 'rgba(107, 80,  168, 0.07)',
 };
 
-const MOON_COLOR = '#5B90C0';
+const MOON_COLOR = '#4CA8C8';
 const CREAM      = '#F7F5F0';
 const INK        = '#1C1917';
 const INK_MID    = '#6B6560';
@@ -319,23 +319,21 @@ export default function CircularCalendar({
             {tip.title}
           </p>
           {tip.meta && (
-            <p style={{ fontSize: '9.5px', letterSpacing: '0.1em', textTransform: 'uppercase',
-              color: '#78716C', margin: '0 0 8px' }}>
+            <p style={{ fontSize: '11px', color: '#78716C', margin: '0 0 8px' }}>
               {tip.meta}
             </p>
           )}
           {tip.rows.map(({ label, value }) => (
-            <div key={label} style={{ display: 'flex', gap: '8px', marginTop: '3px',
+            <div key={label} style={{ display: 'flex', gap: '8px', marginTop: '4px',
               fontSize: '11px', alignItems: 'baseline' }}>
-              <span style={{ color: '#6B6560', minWidth: '36px', fontSize: '9px',
-                letterSpacing: '0.1em', textTransform: 'uppercase', flexShrink: 0 }}>
+              <span style={{ color: '#6B6560', minWidth: '36px', flexShrink: 0 }}>
                 {label}
               </span>
               <span style={{ color: '#D6D3CE' }}>{value}</span>
             </div>
           ))}
           {tip.note && (
-            <p style={{ fontSize: '11px', fontStyle: 'italic', lineHeight: 1.55,
+            <p style={{ fontSize: '11px', lineHeight: 1.55,
               color: '#9C9792', margin: '8px 0 0', borderTop: '1px solid #2C2A28',
               paddingTop: '8px' }}>
               {tip.note}

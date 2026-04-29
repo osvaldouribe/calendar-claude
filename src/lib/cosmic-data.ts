@@ -124,10 +124,10 @@ export const FULL_MOONS: FullMoon[] = [
 ];
 
 export const ELEMENT_COLORS: Record<Element, { bg: string; text: string; dot: string }> = {
-  fire:  { bg: '#FDF0E6', text: '#A0522D', dot: '#D4956A' },
-  earth: { bg: '#EDF2E8', text: '#4A7A3A', dot: '#7A9B6A' },
-  air:   { bg: '#E8F0F5', text: '#2A6480', dot: '#6A9BB4' },
-  water: { bg: '#E5ECF5', text: '#2A4A80', dot: '#6A80A8' },
+  fire:  { bg: '#FAEEE6', text: '#A04020', dot: '#C8673A' },
+  earth: { bg: '#EAF2E5', text: '#3A6A28', dot: '#6A9B52' },
+  air:   { bg: '#E2F3F8', text: '#1A7A96', dot: '#4CA8C8' },
+  water: { bg: '#EEE8F8', text: '#4A2A90', dot: '#6B50A8' },
 };
 
 export function getDayOfYear(date: Date): number {
