@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState, useRef } from 'react';
 import type { ZodiacSign, FullMoon } from '@/lib/cosmic-data';
 import { getDayOfYear, getDaysInYear } from '@/lib/cosmic-data';
 
@@ -21,6 +21,8 @@ export interface CircularCalendarProps {
   onEventClick?: (event: CalendarEvent) => void;
   onTodayClick?: () => void;
 }
+
+// ── geometry helpers ────────────────────────────────────────────────────────
 
 const CX = 300;
 const CY = 300;
@@ -50,20 +52,31 @@ function sectorPath(r1: number, r2: number, startAngle: number, endAngle: number
   ].join(' ');
 }
 
-// Very subtle tints — nearly the same warm cream, barely distinguishable by hue
+function dayOfYearToDate(doy: number, year: number): string {
+  const d = new Date(year, 0, doy);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// ── color tokens ─────────────────────────────────────────────────────────────
+
 const ELEMENT_FILL: Record<string, string> = {
   fire:  'hsl(28, 28%, 96%)',
   earth: 'hsl(88, 14%, 95%)',
   air:   'hsl(208, 20%, 95%)',
   water: 'hsl(222, 22%, 95%)',
 };
-
 const ELEMENT_STROKE: Record<string, string> = {
   fire:  'hsl(28, 20%, 87%)',
   earth: 'hsl(88, 12%, 87%)',
   air:   'hsl(208, 18%, 87%)',
   water: 'hsl(222, 20%, 87%)',
 };
+
+const ELEMENT_LABEL: Record<string, string> = {
+  fire: 'Fire', earth: 'Earth', air: 'Air', water: 'Water',
+};
+
+// ── static data ───────────────────────────────────────────────────────────────
 
 const MONTHS = [
   { name: 'JAN', days: 31 }, { name: 'FEB', days: 28 },
@@ -85,9 +98,21 @@ const R = {
   innerCircle:  84,
 } as const;
 
-// Shared text style for the SVG
-const SANS: React.CSSProperties = { fontFamily: "'DM Sans', system-ui, sans-serif", userSelect: 'none' };
+const SANS: React.CSSProperties  = { fontFamily: "'DM Sans', system-ui, sans-serif", userSelect: 'none' };
 const SERIF: React.CSSProperties = { fontFamily: "'DM Serif Display', Georgia, serif", userSelect: 'none' };
+
+// ── tooltip types ─────────────────────────────────────────────────────────────
+
+interface TooltipState {
+  x: number;
+  y: number;
+  title: string;
+  subtitle?: string;
+  rows: { label: string; value: string }[];
+  note?: string;
+}
+
+// ── component ─────────────────────────────────────────────────────────────────
 
 export default function CircularCalendar({
   today, events, fullMoons, zodiacSigns,
@@ -98,6 +123,9 @@ export default function CircularCalendar({
   const todayDOY   = getDayOfYear(today);
   const todayAngle = dayToAngle(todayDOY, daysInYear);
 
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+
   const leapOffset = daysInYear === 366 ? 1 : 0;
   let running = 1;
   const months = MONTHS.map((m, i) => {
@@ -106,6 +134,23 @@ export default function CircularCalendar({
     running += days;
     return { ...m, days, startDay, endDay: running - 1 };
   });
+
+  // ── tooltip helpers ──────────────────────────────────────────────────────
+
+  const posFromEvent = useCallback((e: React.MouseEvent): { x: number; y: number } => {
+    const rect = wrapperRef.current?.getBoundingClientRect();
+    return rect
+      ? { x: e.clientX - rect.left, y: e.clientY - rect.top }
+      : { x: e.clientX, y: e.clientY };
+  }, []);
+
+  const trackMouse = useCallback((e: React.MouseEvent) => {
+    setTooltip(prev => prev ? { ...prev, ...posFromEvent(e) } : null);
+  }, [posFromEvent]);
+
+  const hide = useCallback(() => setTooltip(null), []);
+
+  // ── renderers ────────────────────────────────────────────────────────────
 
   const renderZodiacSegments = useCallback(() =>
     zodiacSigns.map((sign, i) => {
@@ -116,7 +161,22 @@ export default function CircularCalendar({
       const labelPos   = polarToCartesian((R.zodiacOut + R.zodiacIn) / 2, midAngle);
 
       return (
-        <g key={`zodiac-${i}`}>
+        <g
+          key={`zodiac-${i}`}
+          style={{ cursor: 'default' }}
+          onMouseEnter={(e) => setTooltip({
+            ...posFromEvent(e),
+            title: `${sign.name} ${sign.symbol}`,
+            subtitle: `${ELEMENT_LABEL[sign.element]} · ${sign.planet}`,
+            rows: [
+              { label: 'Dates',  value: `${dayOfYearToDate(sign.startDay, year)} – ${dayOfYearToDate(endDay, year)}` },
+              { label: 'Tarot',  value: sign.tarot },
+            ],
+            note: sign.energyDescription,
+          })}
+          onMouseMove={trackMouse}
+          onMouseLeave={hide}
+        >
           <path
             d={sectorPath(R.zodiacIn, R.zodiacOut, startAngle, endAngle)}
             fill={ELEMENT_FILL[sign.element]}
@@ -136,7 +196,7 @@ export default function CircularCalendar({
         </g>
       );
     }),
-  [zodiacSigns, daysInYear]);
+  [zodiacSigns, daysInYear, year, posFromEvent, trackMouse, hide]);
 
   const renderMonthGrid = useCallback(() =>
     months.map((m) => {
@@ -185,8 +245,7 @@ export default function CircularCalendar({
           <line x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y}
             stroke="hsl(35, 18%, 75%)" strokeWidth="0.8" strokeDasharray="2.5 2" />
           <text x={lbl.x} y={lbl.y} textAnchor="middle" dominantBaseline="central"
-            fontSize="7.5" fill="hsl(35, 18%, 68%)"
-            style={SERIF}>
+            fontSize="7.5" fill="hsl(35, 18%, 68%)" style={SERIF}>
             {label}
           </text>
         </g>
@@ -198,18 +257,33 @@ export default function CircularCalendar({
     fullMoons
       .filter((m) => new Date(m.date).getFullYear() === year)
       .map((moon) => {
-        const doy = getDayOfYear(new Date(moon.date));
+        const doy   = getDayOfYear(new Date(moon.date));
         const angle = dayToAngle(doy, daysInYear);
-        const pos = polarToCartesian(R.moonRing, angle);
+        const pos   = polarToCartesian(R.moonRing, angle);
+        const dateStr = new Date(moon.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
         return (
-          <g key={moon.name + moon.date}>
+          <g
+            key={moon.name + moon.date}
+            style={{ cursor: 'default' }}
+            onMouseEnter={(e) => setTooltip({
+              ...posFromEvent(e),
+              title: `${moon.name} ○`,
+              rows: [{ label: 'Date', value: dateStr }],
+              note: moon.description,
+            })}
+            onMouseMove={trackMouse}
+            onMouseLeave={hide}
+          >
+            {/* Larger invisible hit area */}
+            <circle cx={pos.x} cy={pos.y} r={9} fill="transparent" />
             <circle cx={pos.x} cy={pos.y} r={3.5}
               fill="none" stroke="hsl(35, 30%, 64%)" strokeWidth="1.1" />
             <circle cx={pos.x} cy={pos.y} r={0.8} fill="hsl(35, 30%, 64%)" />
           </g>
         );
       }),
-  [fullMoons, year, daysInYear]);
+  [fullMoons, year, daysInYear, posFromEvent, trackMouse, hide]);
 
   const renderEvents = useCallback(() =>
     events.map((event) => {
@@ -242,7 +316,7 @@ export default function CircularCalendar({
     const lineEnd   = polarToCartesian(R.todayLine, todayAngle);
     const lineStart = polarToCartesian(R.innerCircle + 6, todayAngle);
     return (
-      <g className="cursor-pointer" onClick={onTodayClick}>
+      <g style={{ cursor: 'pointer' }} onClick={onTodayClick}>
         <circle cx={tipPos.x} cy={tipPos.y} r={7}
           fill="hsl(215, 18%, 20%)" opacity="0.08" />
         <line
@@ -253,57 +327,122 @@ export default function CircularCalendar({
     );
   }, [todayAngle, onTodayClick]);
 
+  // ── tooltip rendering ────────────────────────────────────────────────────
+
+  const containerW = wrapperRef.current?.offsetWidth ?? 400;
+  const flipX = tooltip ? tooltip.x > containerW * 0.60 : false;
+
+  // ── render ───────────────────────────────────────────────────────────────
+
   return (
-    <svg
-      viewBox="0 0 600 600"
-      xmlns="http://www.w3.org/2000/svg"
-      style={{ width: '100%', display: 'block' }}
-      aria-label={`Circular calendar for ${year}`}
-    >
-      {/* Background disc */}
-      <circle cx={CX} cy={CY} r={R.outerRing + 30} fill="var(--bg-cream, #F7F5F0)" />
-      <circle cx={CX} cy={CY} r={R.outerRing}
-        fill="none" stroke="hsl(35, 12%, 82%)" strokeWidth="0.6" />
+    <div ref={wrapperRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <svg
+        viewBox="0 0 600 600"
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ width: '100%', height: '100%', display: 'block' }}
+        aria-label={`Circular calendar for ${year}`}
+      >
+        {/* Background disc */}
+        <circle cx={CX} cy={CY} r={R.outerRing + 30} fill="var(--bg-cream, #F7F5F0)" />
+        <circle cx={CX} cy={CY} r={R.outerRing}
+          fill="none" stroke="hsl(35, 12%, 82%)" strokeWidth="0.6" />
 
-      {renderZodiacSegments()}
+        {renderZodiacSegments()}
 
-      <circle cx={CX} cy={CY} r={R.zodiacOut}
-        fill="none" stroke="hsl(35, 10%, 84%)" strokeWidth="0.5" />
-      <circle cx={CX} cy={CY} r={R.zodiacIn}
-        fill="none" stroke="hsl(35, 10%, 84%)" strokeWidth="0.5" />
+        <circle cx={CX} cy={CY} r={R.zodiacOut}
+          fill="none" stroke="hsl(35, 10%, 84%)" strokeWidth="0.5" />
+        <circle cx={CX} cy={CY} r={R.zodiacIn}
+          fill="none" stroke="hsl(35, 10%, 84%)" strokeWidth="0.5" />
 
-      {renderMonthGrid()}
-      {renderSeasonMarkers()}
+        {renderMonthGrid()}
+        {renderSeasonMarkers()}
 
-      <circle cx={CX} cy={CY} r={R.moonRing}
-        fill="none" stroke="hsl(35, 15%, 85%)" strokeWidth="0.4" strokeDasharray="1 4" />
-      {renderFullMoons()}
+        <circle cx={CX} cy={CY} r={R.moonRing}
+          fill="none" stroke="hsl(35, 15%, 85%)" strokeWidth="0.4" strokeDasharray="1 4" />
+        {renderFullMoons()}
 
-      <circle cx={CX} cy={CY} r={R.eventRing}
-        fill="none" stroke="hsl(215, 10%, 86%)" strokeWidth="0.4" strokeDasharray="1 4" />
-      {renderEvents()}
+        <circle cx={CX} cy={CY} r={R.eventRing}
+          fill="none" stroke="hsl(215, 10%, 86%)" strokeWidth="0.4" strokeDasharray="1 4" />
+        {renderEvents()}
 
-      {renderTodayIndicator()}
+        {renderTodayIndicator()}
 
-      {/* Center disc */}
-      <circle cx={CX} cy={CY} r={R.innerCircle}
-        fill="var(--bg-cream, #F7F5F0)" stroke="hsl(35, 10%, 86%)" strokeWidth="0.8" />
+        {/* Center disc */}
+        <circle cx={CX} cy={CY} r={R.innerCircle}
+          fill="var(--bg-cream, #F7F5F0)" stroke="hsl(35, 10%, 86%)" strokeWidth="0.8" />
+        <text x={CX} y={CY - 22} textAnchor="middle"
+          fontSize="8.5" letterSpacing="0.22em" fill="hsl(35, 8%, 62%)"
+          style={SANS}>
+          {year}
+        </text>
+        <text x={CX} y={CY + 9} textAnchor="middle"
+          fontSize="32" fill="var(--ink, #1C1917)"
+          style={SERIF}>
+          {today.getDate()}
+        </text>
+        <text x={CX} y={CY + 26} textAnchor="middle"
+          fontSize="7.5" letterSpacing="0.22em" fill="hsl(35, 8%, 62%)"
+          style={SANS}>
+          {today.toLocaleString('default', { month: 'long' }).toUpperCase()}
+        </text>
+      </svg>
 
-      <text x={CX} y={CY - 22} textAnchor="middle"
-        fontSize="8.5" letterSpacing="0.22em" fill="hsl(35, 8%, 62%)"
-        style={SANS}>
-        {year}
-      </text>
-      <text x={CX} y={CY + 9} textAnchor="middle"
-        fontSize="32" fill="var(--ink, #1C1917)"
-        style={SERIF}>
-        {today.getDate()}
-      </text>
-      <text x={CX} y={CY + 26} textAnchor="middle"
-        fontSize="7.5" letterSpacing="0.22em" fill="hsl(35, 8%, 62%)"
-        style={SANS}>
-        {today.toLocaleString('default', { month: 'long' }).toUpperCase()}
-      </text>
-    </svg>
+      {/* Floating tooltip */}
+      {tooltip && (
+        <div style={{
+          position: 'absolute',
+          left: flipX ? tooltip.x - 14 : tooltip.x + 14,
+          top: tooltip.y - 10,
+          transform: flipX ? 'translateX(-100%)' : 'none',
+          background: '#1C1917',
+          color: '#F7F5F0',
+          padding: '12px 14px',
+          borderRadius: '7px',
+          pointerEvents: 'none',
+          zIndex: 20,
+          maxWidth: '210px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.18)',
+        }}>
+          <p style={{
+            fontFamily: "'DM Serif Display', Georgia, serif",
+            fontSize: '13px', margin: '0 0 2px', lineHeight: 1.2, color: '#F7F5F0',
+          }}>
+            {tooltip.title}
+          </p>
+          {tooltip.subtitle && (
+            <p style={{
+              fontFamily: "'DM Sans', system-ui",
+              fontSize: '9.5px', letterSpacing: '0.12em', textTransform: 'uppercase',
+              color: '#9C9792', margin: '0 0 8px',
+            }}>
+              {tooltip.subtitle}
+            </p>
+          )}
+          {tooltip.rows.map(({ label, value }) => (
+            <div key={label} style={{
+              display: 'flex', gap: '8px', alignItems: 'baseline',
+              fontFamily: "'DM Sans', system-ui", fontSize: '11px',
+              marginTop: tooltip.subtitle || label !== tooltip.rows[0].label ? '3px' : '8px',
+            }}>
+              <span style={{ color: '#6B6560', minWidth: '38px', flexShrink: 0, fontSize: '9.5px',
+                letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                {label}
+              </span>
+              <span style={{ color: '#D6D3CE' }}>{value}</span>
+            </div>
+          ))}
+          {tooltip.note && (
+            <p style={{
+              fontFamily: "'DM Serif Display', Georgia, serif",
+              fontSize: '11px', fontStyle: 'italic', lineHeight: 1.55,
+              color: '#9C9792', margin: '8px 0 0',
+              borderTop: '1px solid #2C2A28', paddingTop: '8px',
+            }}>
+              {tooltip.note}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
