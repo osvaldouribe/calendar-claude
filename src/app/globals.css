@@ -4,8 +4,7 @@
 
 @layer base {
   :root {
-    --font-dm-sans:  'DM Sans', system-ui, sans-serif;
-    --font-dm-serif: 'DM Serif Display', Georgia, serif;
+    --font-inter: 'Inter', system-ui, sans-serif;
     --bg-cream: #F7F5F0;
     --ink: #1C1917;
     --ink-mid: #6B6560;
@@ -13,9 +12,37 @@
     --border: #E8E4DC;
   }
   * { box-sizing: border-box; }
-  html, body { height: 100%; margin: 0; padding: 0; background: var(--bg-cream); }
+  html, body { height: 100%; margin: 0; padding: 0; background: var(--bg-cream); font-family: var(--font-inter); }
   ::-webkit-scrollbar        { width: 3px; }
   ::-webkit-scrollbar-track  { background: transparent; }
   ::-webkit-scrollbar-thumb  { background: hsl(35, 12%, 82%); border-radius: 2px; }
   ::selection { background: hsl(35, 25%, 88%); }
+}
+
+/* ── Responsive layout ── use real CSS classes instead of Tailwind breakpoint
+   prefixes so the classes are always in the stylesheet regardless of purging. */
+
+.layout-desktop {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 300px;
+}
+
+.layout-mobile {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .layout-desktop {
+    display: none;
+  }
+  .layout-mobile {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
 }
