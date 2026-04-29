@@ -14,13 +14,13 @@ const dmSerif = DM_Serif_Display({
 
 export const metadata: Metadata = {
   title: 'Cosmic Calendar',
-  description: 'A minimalist circular calendar for seasonal and cosmic rhythms.',
+  description: 'A minimalist circular calendar for seasonal and cosmic rhythms. A side project by Osvaldo Uribe.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${dmSans.variable} ${dmSerif.variable}`}>
-      <body className="antialiased bg-stone-50 text-stone-800">
+      <body className="antialiased text-stone-800" style={{ background: '#F7F5F0' }}>
         {children}
       </body>
     </html>

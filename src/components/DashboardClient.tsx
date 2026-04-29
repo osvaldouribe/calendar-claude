@@ -23,16 +23,11 @@ export default function DashboardClient({
 }: Props) {
   const router = useRouter();
   const todayDate = new Date(today);
-  const [events, setEvents]               = useState<CalendarEvent[]>(initialEvents);
+  const [events, setEvents] = useState<CalendarEvent[]>(initialEvents);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
-  const handleEventClick = useCallback((event: CalendarEvent) => {
-    setSelectedEvent(event);
-  }, []);
-
-  const handleClearSelection = useCallback(() => {
-    setSelectedEvent(null);
-  }, []);
+  const handleEventClick = useCallback((event: CalendarEvent) => setSelectedEvent(event), []);
+  const handleClearSelection = useCallback(() => setSelectedEvent(null), []);
 
   const handleAddEvent = useCallback(async (data: {
     title: string; date: string; description: string;
@@ -50,38 +45,78 @@ export default function DashboardClient({
   }, [router]);
 
   return (
-    <div className="h-screen flex flex-col bg-stone-50" style={{ fontFamily: "'DM Sans', system-ui" }}>
+    <div
+      className="h-screen flex flex-col overflow-hidden"
+      style={{ background: 'var(--bg-cream)', fontFamily: 'var(--font-dm-sans)' }}
+    >
       {/* Nav */}
-      <nav className="flex items-center justify-between px-8 py-4 border-b border-stone-100">
-        <div className="flex items-center gap-2">
-          <span className="text-stone-300 text-sm">◎</span>
-          <span className="text-sm tracking-widest uppercase text-stone-500"
-            style={{ letterSpacing: '0.15em' }}>
+      <nav
+        className="flex items-center justify-between flex-shrink-0"
+        style={{
+          padding: '0 2.5rem',
+          height: '52px',
+          borderBottom: '1px solid var(--border)',
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <span style={{ color: 'var(--ink-light)', fontSize: '11px', lineHeight: 1 }}>◎</span>
+          <span style={{
+            fontSize: '10.5px',
+            letterSpacing: '0.22em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-mid)',
+            fontWeight: 500,
+          }}>
             Cosmic Calendar
           </span>
         </div>
-        <div className="flex items-center gap-4 text-xs text-stone-400 tracking-wide">
+
+        <div className="flex items-center" style={{ gap: '24px' }}>
           {isLoggedIn ? (
             <>
-              <Link href="/profile"
-                className="hover:text-stone-700 transition-colors tracking-widest uppercase">
+              <Link
+                href="/profile"
+                style={{
+                  fontSize: '10.5px', letterSpacing: '0.15em', textTransform: 'uppercase',
+                  color: 'var(--ink-light)', textDecoration: 'none',
+                }}
+                className="hover:text-stone-900 transition-colors"
+              >
                 {userEmail}
               </Link>
               <form action="/api/auth/signout" method="POST">
-                <button type="submit"
-                  className="tracking-widest uppercase hover:text-stone-700 transition-colors">
+                <button
+                  type="submit"
+                  style={{
+                    fontSize: '10.5px', letterSpacing: '0.15em', textTransform: 'uppercase',
+                    color: 'var(--ink-light)', background: 'none', border: 'none', cursor: 'pointer',
+                    padding: 0, fontFamily: 'inherit',
+                  }}
+                  className="hover:text-stone-900 transition-colors"
+                >
                   Sign out
                 </button>
               </form>
             </>
           ) : (
             <>
-              <Link href="/login"
-                className="tracking-widest uppercase hover:text-stone-700 transition-colors">
+              <Link
+                href="/login"
+                style={{
+                  fontSize: '10.5px', letterSpacing: '0.15em', textTransform: 'uppercase',
+                  color: 'var(--ink-light)', textDecoration: 'none',
+                }}
+                className="hover:text-stone-900 transition-colors"
+              >
                 Sign in
               </Link>
-              <Link href="/signup"
-                className="tracking-widest uppercase text-stone-700 hover:text-stone-900 transition-colors">
+              <Link
+                href="/signup"
+                style={{
+                  fontSize: '10.5px', letterSpacing: '0.15em', textTransform: 'uppercase',
+                  color: 'var(--ink)', textDecoration: 'none', fontWeight: 500,
+                }}
+              >
                 Join
               </Link>
             </>
@@ -90,10 +125,10 @@ export default function DashboardClient({
       </nav>
 
       {/* Body */}
-      <div className="flex-1 flex overflow-hidden">
-        <main className="flex-1 flex items-center justify-center p-8 overflow-hidden">
-          <div className="w-full h-full flex items-center justify-center"
-            style={{ maxWidth: '600px', maxHeight: '600px' }}>
+      <div className="flex-1 flex overflow-hidden min-h-0">
+        {/* Calendar — fills the viewport, constrained to a square by the smaller of width/height */}
+        <main className="flex-1 flex items-center justify-center overflow-hidden min-w-0 p-10">
+          <div style={{ width: 'min(100%, calc(100vh - 7rem))', flexShrink: 0 }}>
             <CircularCalendar
               today={todayDate}
               events={events}
@@ -105,7 +140,16 @@ export default function DashboardClient({
             />
           </div>
         </main>
-        <aside className="w-80 xl:w-96 border-l border-stone-100 bg-white overflow-y-auto flex-shrink-0">
+
+        {/* Side panel */}
+        <aside
+          className="flex-shrink-0 overflow-y-auto flex flex-col"
+          style={{
+            width: '300px',
+            borderLeft: '1px solid var(--border)',
+            background: '#FFFFFF',
+          }}
+        >
           <TodayPanel
             today={todayDate}
             todayInfo={todayInfo}

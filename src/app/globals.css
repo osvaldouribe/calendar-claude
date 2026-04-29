@@ -6,10 +6,16 @@
   :root {
     --font-dm-sans:  'DM Sans', system-ui, sans-serif;
     --font-dm-serif: 'DM Serif Display', Georgia, serif;
+    --bg-cream: #F7F5F0;
+    --ink: #1C1917;
+    --ink-mid: #6B6560;
+    --ink-light: #A8A29E;
+    --border: #E8E4DC;
   }
   * { box-sizing: border-box; }
-  html, body { height: 100%; margin: 0; padding: 0; }
-  ::-webkit-scrollbar        { width: 4px; }
+  html, body { height: 100%; margin: 0; padding: 0; background: var(--bg-cream); }
+  ::-webkit-scrollbar        { width: 3px; }
   ::-webkit-scrollbar-track  { background: transparent; }
-  ::-webkit-scrollbar-thumb  { background: hsl(35, 15%, 85%); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb  { background: hsl(35, 12%, 82%); border-radius: 2px; }
+  ::selection { background: hsl(35, 25%, 88%); }
 }
