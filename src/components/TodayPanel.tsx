@@ -75,7 +75,7 @@ export default function TodayPanel({
 
   if (selectedEvent) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: '32px 28px', overflow: 'auto' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: '24px 24px' }}>
         <button
           onClick={onClearSelection}
           style={{
@@ -125,7 +125,7 @@ export default function TodayPanel({
   const { zodiac, element, planet, tarot, energyDescription, season, nextFullMoon } = todayInfo;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: '32px 28px', overflow: 'auto' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: '24px 24px' }}>
 
       {/* Date header */}
       <div style={{ marginBottom: '28px' }}>
