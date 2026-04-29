@@ -50,18 +50,19 @@ function sectorPath(r1: number, r2: number, startAngle: number, endAngle: number
   ].join(' ');
 }
 
+// Very subtle tints — nearly the same warm cream, barely distinguishable by hue
 const ELEMENT_FILL: Record<string, string> = {
-  fire:  'hsl(28, 55%, 93%)',
-  earth: 'hsl(100, 22%, 91%)',
-  air:   'hsl(205, 35%, 92%)',
-  water: 'hsl(220, 35%, 92%)',
+  fire:  'hsl(28, 28%, 96%)',
+  earth: 'hsl(88, 14%, 95%)',
+  air:   'hsl(208, 20%, 95%)',
+  water: 'hsl(222, 22%, 95%)',
 };
 
 const ELEMENT_STROKE: Record<string, string> = {
-  fire:  'hsl(28, 45%, 68%)',
-  earth: 'hsl(105, 28%, 55%)',
-  air:   'hsl(207, 40%, 58%)',
-  water: 'hsl(222, 38%, 58%)',
+  fire:  'hsl(28, 20%, 87%)',
+  earth: 'hsl(88, 12%, 87%)',
+  air:   'hsl(208, 18%, 87%)',
+  water: 'hsl(222, 20%, 87%)',
 };
 
 const MONTHS = [
@@ -83,6 +84,10 @@ const R = {
   todayLine:   163,
   innerCircle:  84,
 } as const;
+
+// Shared text style for the SVG
+const SANS: React.CSSProperties = { fontFamily: "'DM Sans', system-ui, sans-serif", userSelect: 'none' };
+const SERIF: React.CSSProperties = { fontFamily: "'DM Serif Display', Georgia, serif", userSelect: 'none' };
 
 export default function CircularCalendar({
   today, events, fullMoons, zodiacSigns,
@@ -116,15 +121,14 @@ export default function CircularCalendar({
             d={sectorPath(R.zodiacIn, R.zodiacOut, startAngle, endAngle)}
             fill={ELEMENT_FILL[sign.element]}
             stroke={ELEMENT_STROKE[sign.element]}
-            strokeWidth="0.4"
-            opacity="0.75"
+            strokeWidth="0.5"
           />
           {endAngle - startAngle > 12 && (
             <text
               x={labelPos.x} y={labelPos.y}
               textAnchor="middle" dominantBaseline="central"
-              fontSize="10" fill="#666"
-              style={{ fontFamily: 'serif', userSelect: 'none' }}
+              fontSize="10" fill="hsl(30, 10%, 62%)"
+              style={SERIF}
             >
               {sign.symbol}
             </text>
@@ -148,14 +152,14 @@ export default function CircularCalendar({
           <line
             x1={tickInner.x} y1={tickInner.y}
             x2={tickOuter.x} y2={tickOuter.y}
-            stroke="#C8C4BC" strokeWidth="0.6"
+            stroke="hsl(35, 12%, 80%)" strokeWidth="0.7"
           />
           <text
             x={labelPos.x} y={labelPos.y}
             textAnchor="middle" dominantBaseline="central"
-            fontSize="6.5" letterSpacing="0.1em" fill="#A09890"
+            fontSize="6.5" letterSpacing="0.12em" fill="hsl(35, 8%, 65%)"
             transform={`rotate(${textRotation}, ${labelPos.x}, ${labelPos.y})`}
-            style={{ fontFamily: "'DM Sans', system-ui, sans-serif", userSelect: 'none' }}
+            style={SANS}
           >
             {m.name}
           </text>
@@ -179,10 +183,10 @@ export default function CircularCalendar({
       return (
         <g key={label}>
           <line x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y}
-            stroke="hsl(35, 25%, 70%)" strokeWidth="0.8" strokeDasharray="2.5 2" />
+            stroke="hsl(35, 18%, 75%)" strokeWidth="0.8" strokeDasharray="2.5 2" />
           <text x={lbl.x} y={lbl.y} textAnchor="middle" dominantBaseline="central"
-            fontSize="7.5" fill="hsl(35, 25%, 65%)"
-            style={{ fontFamily: 'serif', userSelect: 'none' }}>
+            fontSize="7.5" fill="hsl(35, 18%, 68%)"
+            style={SERIF}>
             {label}
           </text>
         </g>
@@ -200,8 +204,8 @@ export default function CircularCalendar({
         return (
           <g key={moon.name + moon.date}>
             <circle cx={pos.x} cy={pos.y} r={3.5}
-              fill="none" stroke="hsl(35, 35%, 66%)" strokeWidth="1.2" />
-            <circle cx={pos.x} cy={pos.y} r={0.8} fill="hsl(35, 35%, 66%)" />
+              fill="none" stroke="hsl(35, 30%, 64%)" strokeWidth="1.1" />
+            <circle cx={pos.x} cy={pos.y} r={0.8} fill="hsl(35, 30%, 64%)" />
           </g>
         );
       }),
@@ -219,7 +223,7 @@ export default function CircularCalendar({
       return (
         <g key={event.id} className="cursor-pointer" onClick={() => onEventClick?.(event)}>
           {isActive && (
-            <circle cx={pos.x} cy={pos.y} r={8} fill={color} opacity="0.2" />
+            <circle cx={pos.x} cy={pos.y} r={8} fill={color} opacity="0.18" />
           )}
           <circle
             cx={pos.x} cy={pos.y} r={isActive ? 5 : 3.5}
@@ -240,60 +244,64 @@ export default function CircularCalendar({
     return (
       <g className="cursor-pointer" onClick={onTodayClick}>
         <circle cx={tipPos.x} cy={tipPos.y} r={7}
-          fill="hsl(215, 18%, 20%)" opacity="0.12" />
+          fill="hsl(215, 18%, 20%)" opacity="0.08" />
         <line
           x1={lineStart.x} y1={lineStart.y} x2={lineEnd.x} y2={lineEnd.y}
-          stroke="hsl(215, 18%, 20%)" strokeWidth="1.4" strokeLinecap="round" />
-        <circle cx={tipPos.x} cy={tipPos.y} r={4.5} fill="hsl(215, 18%, 20%)" />
+          stroke="var(--ink, #1C1917)" strokeWidth="1.2" strokeLinecap="round" />
+        <circle cx={tipPos.x} cy={tipPos.y} r={4.5} fill="var(--ink, #1C1917)" />
       </g>
     );
   }, [todayAngle, onTodayClick]);
 
   return (
-    <svg viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg"
-      className="w-full h-full" style={{ maxWidth: '600px', maxHeight: '600px' }}
-      aria-label={`Circular calendar for ${year}`}>
-
-      <circle cx={CX} cy={CY} r={R.outerRing + 30} fill="hsl(40, 20%, 98%)" />
+    <svg
+      viewBox="0 0 600 600"
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ width: '100%', display: 'block' }}
+      aria-label={`Circular calendar for ${year}`}
+    >
+      {/* Background disc */}
+      <circle cx={CX} cy={CY} r={R.outerRing + 30} fill="var(--bg-cream, #F7F5F0)" />
       <circle cx={CX} cy={CY} r={R.outerRing}
-        fill="none" stroke="hsl(35, 15%, 85%)" strokeWidth="0.6" />
+        fill="none" stroke="hsl(35, 12%, 82%)" strokeWidth="0.6" />
 
       {renderZodiacSegments()}
 
       <circle cx={CX} cy={CY} r={R.zodiacOut}
-        fill="none" stroke="hsl(35, 12%, 82%)" strokeWidth="0.5" />
+        fill="none" stroke="hsl(35, 10%, 84%)" strokeWidth="0.5" />
       <circle cx={CX} cy={CY} r={R.zodiacIn}
-        fill="none" stroke="hsl(35, 12%, 82%)" strokeWidth="0.5" />
+        fill="none" stroke="hsl(35, 10%, 84%)" strokeWidth="0.5" />
 
       {renderMonthGrid()}
       {renderSeasonMarkers()}
 
       <circle cx={CX} cy={CY} r={R.moonRing}
-        fill="none" stroke="hsl(35, 15%, 88%)" strokeWidth="0.4" strokeDasharray="1 4" />
+        fill="none" stroke="hsl(35, 15%, 85%)" strokeWidth="0.4" strokeDasharray="1 4" />
       {renderFullMoons()}
 
       <circle cx={CX} cy={CY} r={R.eventRing}
-        fill="none" stroke="hsl(215, 15%, 88%)" strokeWidth="0.4" strokeDasharray="1 4" />
+        fill="none" stroke="hsl(215, 10%, 86%)" strokeWidth="0.4" strokeDasharray="1 4" />
       {renderEvents()}
 
       {renderTodayIndicator()}
 
+      {/* Center disc */}
       <circle cx={CX} cy={CY} r={R.innerCircle}
-        fill="hsl(40, 20%, 98%)" stroke="hsl(35, 12%, 88%)" strokeWidth="0.8" />
+        fill="var(--bg-cream, #F7F5F0)" stroke="hsl(35, 10%, 86%)" strokeWidth="0.8" />
 
       <text x={CX} y={CY - 22} textAnchor="middle"
-        fontSize="9" letterSpacing="0.18em" fill="hsl(215, 8%, 60%)"
-        style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontWeight: 400 }}>
+        fontSize="8.5" letterSpacing="0.22em" fill="hsl(35, 8%, 62%)"
+        style={SANS}>
         {year}
       </text>
-      <text x={CX} y={CY + 8} textAnchor="middle"
-        fontSize="30" fill="hsl(215, 18%, 20%)"
-        style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontWeight: 300 }}>
+      <text x={CX} y={CY + 9} textAnchor="middle"
+        fontSize="32" fill="var(--ink, #1C1917)"
+        style={SERIF}>
         {today.getDate()}
       </text>
       <text x={CX} y={CY + 26} textAnchor="middle"
-        fontSize="8" letterSpacing="0.18em" fill="hsl(215, 8%, 60%)"
-        style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontWeight: 400 }}>
+        fontSize="7.5" letterSpacing="0.22em" fill="hsl(35, 8%, 62%)"
+        style={SANS}>
         {today.toLocaleString('default', { month: 'long' }).toUpperCase()}
       </text>
     </svg>

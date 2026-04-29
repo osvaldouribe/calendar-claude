@@ -14,29 +14,45 @@ interface TodayPanelProps {
   onClearSelection?: () => void;
 }
 
-function ElementBadge({ element }: { element: string }) {
-  const colors = ELEMENT_COLORS[element as keyof typeof ELEMENT_COLORS];
-  return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium tracking-wide"
-      style={{ backgroundColor: colors.bg, color: colors.text }}>
-      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: colors.dot }} />
-      {element.charAt(0).toUpperCase() + element.slice(1)}
-    </span>
-  );
-}
+const LABEL_STYLE: React.CSSProperties = {
+  fontFamily: 'var(--font-dm-sans)',
+  fontSize: '9.5px',
+  letterSpacing: '0.2em',
+  textTransform: 'uppercase',
+  color: 'var(--ink-light)',
+};
 
-function Divider() {
-  return <div className="border-t border-stone-100 my-5" />;
-}
+const VALUE_STYLE: React.CSSProperties = {
+  fontFamily: 'var(--font-dm-serif)',
+  fontSize: '14px',
+  color: 'var(--ink)',
+};
+
+const DIVIDER = (
+  <div style={{ height: '1px', background: 'var(--border)', margin: '20px 0' }} />
+);
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 py-2">
-      <span className="text-xs tracking-widest uppercase text-stone-400"
-        style={{ fontFamily: "'DM Sans', system-ui" }}>{label}</span>
-      <span className="text-sm text-stone-700"
-        style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}>{value}</span>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '7px 0' }}>
+      <span style={LABEL_STYLE}>{label}</span>
+      <span style={VALUE_STYLE}>{value}</span>
     </div>
+  );
+}
+
+function ElementBadge({ element }: { element: string }) {
+  const colors = ELEMENT_COLORS[element as keyof typeof ELEMENT_COLORS];
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: '6px',
+      padding: '3px 10px', borderRadius: '99px',
+      backgroundColor: colors.bg, color: colors.text,
+      fontSize: '10px', letterSpacing: '0.1em', fontFamily: 'var(--font-dm-sans)',
+    }}>
+      <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: colors.dot, display: 'inline-block' }} />
+      {element.charAt(0).toUpperCase() + element.slice(1)}
+    </span>
   );
 }
 
@@ -59,135 +75,213 @@ export default function TodayPanel({
 
   if (selectedEvent) {
     return (
-      <aside className="h-full flex flex-col p-8 overflow-y-auto">
-        <button onClick={onClearSelection}
-          className="text-xs text-stone-400 hover:text-stone-600 tracking-widest uppercase mb-8 text-left transition-colors">
-          ← Back to Today
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: '32px 28px', overflow: 'auto' }}>
+        <button
+          onClick={onClearSelection}
+          style={{
+            ...LABEL_STYLE,
+            background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+            textAlign: 'left', marginBottom: '32px',
+          }}
+          className="hover:text-stone-900 transition-colors"
+        >
+          ← Today
         </button>
-        <div className="w-8 h-1 rounded-full mb-6"
-          style={{ backgroundColor: selectedEvent.color ?? '#6B7280' }} />
-        <p className="text-xs tracking-widest uppercase text-stone-400 mb-2"
-          style={{ fontFamily: "'DM Sans', system-ui" }}>Event</p>
-        <h2 className="text-2xl text-stone-800 leading-tight mb-3"
-          style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontWeight: 300 }}>
+        <div style={{
+          width: '28px', height: '3px', borderRadius: '2px',
+          backgroundColor: selectedEvent.color ?? '#9C9792',
+          marginBottom: '24px',
+        }} />
+        <p style={{ ...LABEL_STYLE, marginBottom: '8px' }}>Event</p>
+        <h2 style={{
+          fontFamily: 'var(--font-dm-serif)',
+          fontSize: '22px', color: 'var(--ink)',
+          fontWeight: 400, lineHeight: 1.25, margin: '0 0 10px',
+        }}>
           {selectedEvent.title}
         </h2>
-        <p className="text-sm text-stone-500 mb-6"
-          style={{ fontFamily: "'DM Sans', system-ui" }}>
+        <p style={{ ...LABEL_STYLE, letterSpacing: '0.1em' }}>
           {new Date(selectedEvent.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
         </p>
         {selectedEvent.description && (
           <>
-            <Divider />
-            <p className="text-sm text-stone-600 leading-relaxed italic"
-              style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}>
+            {DIVIDER}
+            <p style={{
+              fontFamily: 'var(--font-dm-serif)',
+              fontSize: '13.5px', color: 'var(--ink-mid)',
+              lineHeight: 1.7, fontStyle: 'italic',
+            }}>
               {selectedEvent.description}
             </p>
           </>
         )}
-      </aside>
+        <div style={{ marginTop: 'auto', paddingTop: '40px' }}>
+          <Attribution />
+        </div>
+      </div>
     );
   }
 
   const { zodiac, element, planet, tarot, energyDescription, season, nextFullMoon } = todayInfo;
 
   return (
-    <aside className="h-full flex flex-col p-8 overflow-y-auto">
-      <div className="mb-8">
-        <p className="text-xs tracking-widest uppercase text-stone-400 mb-1"
-          style={{ fontFamily: "'DM Sans', system-ui" }}>{season}</p>
-        <h1 className="text-3xl text-stone-800 leading-tight"
-          style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontWeight: 300 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: '32px 28px', overflow: 'auto' }}>
+
+      {/* Date header */}
+      <div style={{ marginBottom: '28px' }}>
+        <p style={{ ...LABEL_STYLE, marginBottom: '10px' }}>{season}</p>
+        <h1 style={{
+          fontFamily: 'var(--font-dm-serif)',
+          fontSize: '28px', color: 'var(--ink)',
+          fontWeight: 400, lineHeight: 1.1, margin: 0,
+        }}>
           {today.getDate()}
-          <span className="text-stone-400 mx-2">·</span>
+          <span style={{ color: 'var(--ink-light)', margin: '0 6px' }}>·</span>
           {today.toLocaleString('default', { month: 'long' })}
         </h1>
-        <p className="text-sm text-stone-400 mt-1"
-          style={{ fontFamily: "'DM Sans', system-ui" }}>
-          {today.toLocaleString('default', { weekday: 'long' })}, {today.getFullYear()}
+        <p style={{ ...LABEL_STYLE, marginTop: '6px', letterSpacing: '0.12em' }}>
+          {today.toLocaleString('default', { weekday: 'long' })},{' '}
+          {today.getFullYear()}
         </p>
       </div>
 
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <span className="text-3xl">{zodiac.symbol}</span>
-          <p className="text-xl text-stone-700"
-            style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontWeight: 300 }}>
+      {DIVIDER}
+
+      {/* Zodiac */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '22px', lineHeight: 1 }}>{zodiac.symbol}</span>
+          <span style={{
+            fontFamily: 'var(--font-dm-serif)',
+            fontSize: '18px', color: 'var(--ink)', fontWeight: 400,
+          }}>
             {zodiac.name}
-          </p>
+          </span>
         </div>
         <ElementBadge element={element} />
       </div>
 
-      <div className="border-t border-stone-100">
+      <div style={{ borderTop: '1px solid var(--border)' }}>
         <InfoRow label="Planet" value={planet} />
         <InfoRow label="Tarot"  value={tarot} />
       </div>
 
-      <Divider />
+      {DIVIDER}
 
-      <p className="text-sm text-stone-600 leading-relaxed italic"
-        style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}>
+      <p style={{
+        fontFamily: 'var(--font-dm-serif)',
+        fontSize: '13.5px', color: 'var(--ink-mid)',
+        lineHeight: 1.75, fontStyle: 'italic', margin: 0,
+      }}>
         {energyDescription}
       </p>
 
-      <Divider />
+      {DIVIDER}
 
+      {/* Full Moon */}
       <div>
-        <p className="text-xs tracking-widest uppercase text-stone-400 mb-3"
-          style={{ fontFamily: "'DM Sans', system-ui" }}>Next Full Moon</p>
-        <div className="flex items-start gap-3">
-          <span className="text-lg mt-0.5">○</span>
+        <p style={{ ...LABEL_STYLE, marginBottom: '14px' }}>Next Full Moon</p>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+          <span style={{ fontSize: '16px', lineHeight: 1, marginTop: '2px', color: 'var(--ink-light)' }}>○</span>
           <div>
-            <p className="text-base text-stone-700"
-              style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontWeight: 300 }}>
+            <p style={{
+              fontFamily: 'var(--font-dm-serif)',
+              fontSize: '15px', color: 'var(--ink)', fontWeight: 400, margin: '0 0 3px',
+            }}>
               {nextFullMoon.name}
             </p>
-            <p className="text-xs text-stone-400 mt-0.5"
-              style={{ fontFamily: "'DM Sans', system-ui" }}>
+            <p style={{ ...LABEL_STYLE, letterSpacing: '0.1em', marginBottom: '6px' }}>
               {new Date(nextFullMoon.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
-            <p className="text-xs text-stone-500 mt-1 leading-relaxed italic"
-              style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}>
+            <p style={{
+              fontFamily: 'var(--font-dm-serif)',
+              fontSize: '12.5px', color: 'var(--ink-light)', lineHeight: 1.6, fontStyle: 'italic', margin: 0,
+            }}>
               {nextFullMoon.description}
             </p>
           </div>
         </div>
       </div>
 
+      {/* Add event (logged in only) */}
       {isLoggedIn && (
-        <div className="mt-auto pt-8">
+        <div style={{ marginTop: '28px' }}>
           {!showAddForm ? (
-            <button onClick={() => setShowAddForm(true)}
-              className="w-full text-sm text-stone-500 hover:text-stone-800 border border-stone-200 hover:border-stone-400 rounded-lg py-2.5 tracking-wide transition-all"
-              style={{ fontFamily: "'DM Sans', system-ui" }}>
-              + Add personal date
+            <button
+              onClick={() => setShowAddForm(true)}
+              style={{
+                width: '100%',
+                background: 'none',
+                border: '1px solid var(--border)',
+                borderRadius: '6px',
+                padding: '10px',
+                ...LABEL_STYLE,
+                cursor: 'pointer',
+                letterSpacing: '0.15em',
+                transition: 'border-color 0.2s, color 0.2s',
+              }}
+              className="hover:border-stone-500 hover:text-stone-900"
+            >
+              + Mark a date
             </button>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <p className="text-xs tracking-widest uppercase text-stone-400"
-                style={{ fontFamily: "'DM Sans', system-ui" }}>New Date</p>
-              <input type="text" placeholder="Title" value={formData.title} required
-                onChange={(e) => setFormData(p => ({ ...p, title: e.target.value }))}
-                className="w-full text-sm border border-stone-200 rounded-lg px-3 py-2 focus:outline-none focus:border-stone-400 bg-transparent text-stone-700 placeholder:text-stone-300"
-                style={{ fontFamily: "'DM Sans', system-ui" }} />
-              <input type="date" value={formData.date} required
-                onChange={(e) => setFormData(p => ({ ...p, date: e.target.value }))}
-                className="w-full text-sm border border-stone-200 rounded-lg px-3 py-2 focus:outline-none focus:border-stone-400 bg-transparent text-stone-700"
-                style={{ fontFamily: "'DM Sans', system-ui" }} />
-              <textarea placeholder="Notes (optional)" rows={2} value={formData.description}
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <p style={LABEL_STYLE}>New Date</p>
+              {(['title', 'date'] as const).map((field) => (
+                <input
+                  key={field}
+                  type={field === 'date' ? 'date' : 'text'}
+                  placeholder={field === 'title' ? 'Title' : undefined}
+                  value={formData[field]}
+                  required
+                  onChange={(e) => setFormData(p => ({ ...p, [field]: e.target.value }))}
+                  style={{
+                    width: '100%', fontSize: '13px',
+                    border: '1px solid var(--border)', borderRadius: '5px',
+                    padding: '8px 10px', background: 'transparent',
+                    color: 'var(--ink)', fontFamily: 'var(--font-dm-sans)',
+                    outline: 'none',
+                  }}
+                />
+              ))}
+              <textarea
+                placeholder="Notes (optional)"
+                rows={2}
+                value={formData.description}
                 onChange={(e) => setFormData(p => ({ ...p, description: e.target.value }))}
-                className="w-full text-sm border border-stone-200 rounded-lg px-3 py-2 focus:outline-none focus:border-stone-400 bg-transparent text-stone-700 placeholder:text-stone-300 resize-none"
-                style={{ fontFamily: "'DM Sans', system-ui" }} />
-              <div className="flex gap-2">
-                <button type="submit" disabled={saving}
-                  className="flex-1 text-sm bg-stone-800 text-white rounded-lg py-2 hover:bg-stone-700 disabled:opacity-50 transition-colors"
-                  style={{ fontFamily: "'DM Sans', system-ui" }}>
+                style={{
+                  width: '100%', fontSize: '13px',
+                  border: '1px solid var(--border)', borderRadius: '5px',
+                  padding: '8px 10px', background: 'transparent',
+                  color: 'var(--ink)', fontFamily: 'var(--font-dm-sans)',
+                  outline: 'none', resize: 'none',
+                }}
+              />
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  style={{
+                    flex: 1, fontSize: '11px', letterSpacing: '0.15em',
+                    textTransform: 'uppercase', background: 'var(--ink)',
+                    color: '#fff', border: 'none', borderRadius: '5px',
+                    padding: '9px', cursor: 'pointer', fontFamily: 'var(--font-dm-sans)',
+                    opacity: saving ? 0.5 : 1, transition: 'opacity 0.2s',
+                  }}
+                >
                   {saving ? 'Saving…' : 'Save'}
                 </button>
-                <button type="button" onClick={() => setShowAddForm(false)}
-                  className="px-4 text-sm text-stone-400 hover:text-stone-600 transition-colors"
-                  style={{ fontFamily: "'DM Sans', system-ui" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowAddForm(false)}
+                  style={{
+                    padding: '9px 14px', fontSize: '11px', letterSpacing: '0.15em',
+                    textTransform: 'uppercase', background: 'none',
+                    border: '1px solid var(--border)', borderRadius: '5px',
+                    color: 'var(--ink-light)', cursor: 'pointer',
+                    fontFamily: 'var(--font-dm-sans)', transition: 'color 0.2s',
+                  }}
+                >
                   Cancel
                 </button>
               </div>
@@ -195,6 +289,35 @@ export default function TodayPanel({
           )}
         </div>
       )}
-    </aside>
+
+      {/* Attribution — pushed to bottom */}
+      <div style={{ marginTop: 'auto', paddingTop: '40px' }}>
+        <Attribution />
+      </div>
+    </div>
+  );
+}
+
+function Attribution() {
+  return (
+    <div style={{ borderTop: '1px solid var(--border)', paddingTop: '20px' }}>
+      <p style={{
+        fontFamily: 'var(--font-dm-sans)',
+        fontSize: '9.5px', letterSpacing: '0.12em', color: 'var(--ink-light)',
+        lineHeight: 1.7, margin: 0,
+      }}>
+        A side project by Osvaldo Uribe
+        <br />
+        <a
+          href="https://instagram.com/art.osv"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: 'var(--ink-light)', textDecoration: 'none' }}
+          className="hover:text-stone-900 transition-colors"
+        >
+          @art.osv on Instagram
+        </a>
+      </p>
+    </div>
   );
 }
