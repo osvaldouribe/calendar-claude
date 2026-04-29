@@ -91,7 +91,7 @@ export default function DashboardClient({
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ color: 'var(--ink-light)', fontSize: '11px' }}>◎</span>
           <span style={{
-            fontSize: '10.5px', letterSpacing: '0.2em', textTransform: 'uppercase',
+            fontSize: '12px',
             color: 'var(--ink-mid)', fontWeight: 500, fontFamily: INTER,
           }}>
             Cosmic Calendar
@@ -101,14 +101,14 @@ export default function DashboardClient({
           {isLoggedIn ? (
             <>
               <Link href="/profile" style={{
-                fontSize: '10.5px', letterSpacing: '0.12em', textTransform: 'uppercase',
+                fontSize: '12px',
                 color: 'var(--ink-light)', textDecoration: 'none', fontFamily: INTER,
               }}>
                 {userEmail}
               </Link>
               <form action="/api/auth/signout" method="POST">
                 <button type="submit" style={{
-                  fontSize: '10.5px', letterSpacing: '0.12em', textTransform: 'uppercase',
+                  fontSize: '12px',
                   color: 'var(--ink-light)', background: 'none', border: 'none',
                   cursor: 'pointer', padding: 0, fontFamily: INTER,
                 }}>
@@ -119,13 +119,13 @@ export default function DashboardClient({
           ) : (
             <>
               <Link href="/login" style={{
-                fontSize: '10.5px', letterSpacing: '0.12em', textTransform: 'uppercase',
+                fontSize: '12px',
                 color: 'var(--ink-light)', textDecoration: 'none', fontFamily: INTER,
               }}>
                 Sign in
               </Link>
               <Link href="/signup" style={{
-                fontSize: '10.5px', letterSpacing: '0.12em', textTransform: 'uppercase',
+                fontSize: '12px',
                 color: 'var(--ink)', textDecoration: 'none', fontWeight: 600, fontFamily: INTER,
               }}>
                 Join
@@ -193,7 +193,7 @@ export default function DashboardClient({
                   <span style={{ fontSize: '17px', fontWeight: 400, color: 'var(--ink)', fontFamily: INTER }}>
                     {todayDate.getDate()} · {todayDate.toLocaleString('default', { month: 'long' })}
                   </span>
-                  <p style={{ fontSize: '9.5px', letterSpacing: '0.15em', textTransform: 'uppercase',
+                  <p style={{ fontSize: '11px',
                     color: 'var(--ink-light)', margin: '2px 0 0', fontFamily: INTER }}>
                     {todayInfo.season} · {todayInfo.zodiac.name}
                   </p>
