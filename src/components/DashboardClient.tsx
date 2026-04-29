@@ -45,78 +45,65 @@ export default function DashboardClient({
   }, [router]);
 
   return (
-    <div
-      className="h-screen flex flex-col overflow-hidden"
-      style={{ background: 'var(--bg-cream)', fontFamily: 'var(--font-dm-sans)' }}
-    >
-      {/* Nav */}
-      <nav
-        className="flex items-center justify-between flex-shrink-0"
-        style={{
-          padding: '0 2.5rem',
-          height: '52px',
-          borderBottom: '1px solid var(--border)',
-        }}
-      >
-        <div className="flex items-center gap-3">
-          <span style={{ color: 'var(--ink-light)', fontSize: '11px', lineHeight: 1 }}>◎</span>
+    <div style={{
+      height: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      background: 'var(--bg-cream)',
+      fontFamily: 'var(--font-dm-sans)',
+    }}>
+      {/* Nav — fixed 52px */}
+      <nav style={{
+        height: '52px',
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 2.5rem',
+        borderBottom: '1px solid var(--border)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ color: 'var(--ink-light)', fontSize: '11px' }}>◎</span>
           <span style={{
-            fontSize: '10.5px',
-            letterSpacing: '0.22em',
-            textTransform: 'uppercase',
-            color: 'var(--ink-mid)',
-            fontWeight: 500,
+            fontSize: '10.5px', letterSpacing: '0.22em',
+            textTransform: 'uppercase', color: 'var(--ink-mid)', fontWeight: 500,
           }}>
             Cosmic Calendar
           </span>
         </div>
 
-        <div className="flex items-center" style={{ gap: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
           {isLoggedIn ? (
             <>
-              <Link
-                href="/profile"
-                style={{
-                  fontSize: '10.5px', letterSpacing: '0.15em', textTransform: 'uppercase',
-                  color: 'var(--ink-light)', textDecoration: 'none',
-                }}
-                className="hover:text-stone-900 transition-colors"
-              >
+              <Link href="/profile" className="hover:text-stone-900 transition-colors" style={{
+                fontSize: '10.5px', letterSpacing: '0.15em', textTransform: 'uppercase',
+                color: 'var(--ink-light)', textDecoration: 'none',
+              }}>
                 {userEmail}
               </Link>
               <form action="/api/auth/signout" method="POST">
-                <button
-                  type="submit"
-                  style={{
-                    fontSize: '10.5px', letterSpacing: '0.15em', textTransform: 'uppercase',
-                    color: 'var(--ink-light)', background: 'none', border: 'none', cursor: 'pointer',
-                    padding: 0, fontFamily: 'inherit',
-                  }}
-                  className="hover:text-stone-900 transition-colors"
-                >
+                <button type="submit" className="hover:text-stone-900 transition-colors" style={{
+                  fontSize: '10.5px', letterSpacing: '0.15em', textTransform: 'uppercase',
+                  color: 'var(--ink-light)', background: 'none', border: 'none',
+                  cursor: 'pointer', padding: 0, fontFamily: 'inherit',
+                }}>
                   Sign out
                 </button>
               </form>
             </>
           ) : (
             <>
-              <Link
-                href="/login"
-                style={{
-                  fontSize: '10.5px', letterSpacing: '0.15em', textTransform: 'uppercase',
-                  color: 'var(--ink-light)', textDecoration: 'none',
-                }}
-                className="hover:text-stone-900 transition-colors"
-              >
+              <Link href="/login" className="hover:text-stone-900 transition-colors" style={{
+                fontSize: '10.5px', letterSpacing: '0.15em', textTransform: 'uppercase',
+                color: 'var(--ink-light)', textDecoration: 'none',
+              }}>
                 Sign in
               </Link>
-              <Link
-                href="/signup"
-                style={{
-                  fontSize: '10.5px', letterSpacing: '0.15em', textTransform: 'uppercase',
-                  color: 'var(--ink)', textDecoration: 'none', fontWeight: 500,
-                }}
-              >
+              <Link href="/signup" style={{
+                fontSize: '10.5px', letterSpacing: '0.15em', textTransform: 'uppercase',
+                color: 'var(--ink)', textDecoration: 'none', fontWeight: 500,
+              }}>
                 Join
               </Link>
             </>
@@ -124,11 +111,26 @@ export default function DashboardClient({
         </div>
       </nav>
 
-      {/* Body */}
-      <div className="flex-1 flex overflow-hidden min-h-0">
-        {/* Calendar — fills the viewport, constrained to a square by the smaller of width/height */}
-        <main className="flex-1 flex items-center justify-center overflow-hidden min-w-0 p-10">
-          <div style={{ width: 'min(100%, calc(100vh - 7rem))', flexShrink: 0 }}>
+      {/* Body — CSS Grid: calendar fills 1fr, panel is fixed 300px.
+          min-height:0 prevents flex children from overflowing the 100vh root. */}
+      <div style={{
+        flex: 1,
+        minHeight: 0,
+        display: 'grid',
+        gridTemplateColumns: '1fr 300px',
+      }}>
+        {/* Calendar column — container query so the SVG knows its own box size */}
+        <main style={{
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '2.5rem',
+          /* container-type: size lets child use 100cqw / 100cqh */
+          containerType: 'size',
+        } as React.CSSProperties}>
+          {/* min(cqw, cqh) = largest square that fits the content box */}
+          <div style={{ width: 'min(100cqw, 100cqh)', aspectRatio: '1' }}>
             <CircularCalendar
               today={todayDate}
               events={events}
@@ -141,15 +143,14 @@ export default function DashboardClient({
           </div>
         </main>
 
-        {/* Side panel */}
-        <aside
-          className="flex-shrink-0 overflow-y-auto flex flex-col"
-          style={{
-            width: '300px',
-            borderLeft: '1px solid var(--border)',
-            background: '#FFFFFF',
-          }}
-        >
+        {/* Side panel — fixed width, scrolls in place */}
+        <aside style={{
+          borderLeft: '1px solid var(--border)',
+          background: '#FFFFFF',
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+        }}>
           <TodayPanel
             today={todayDate}
             todayInfo={todayInfo}
