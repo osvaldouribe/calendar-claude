@@ -1,0 +1,9 @@
+.env
+.env.local
+.env.*.local
+.next/
+out/
+node_modules/
+npm-debug.log*
+prisma/*.db
+.DS_Store

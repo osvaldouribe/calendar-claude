@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-dm-sans:  'DM Sans', system-ui, sans-serif;
+    --font-dm-serif: 'DM Serif Display', Georgia, serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; padding: 0; }
+  ::-webkit-scrollbar        { width: 4px; }
+  ::-webkit-scrollbar-track  { background: transparent; }
+  ::-webkit-scrollbar-thumb  { background: hsl(35, 15%, 85%); border-radius: 2px; }
+}
