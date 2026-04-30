@@ -52,10 +52,11 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts Account[]
-  sessions Session[]
-  events   Event[]
-  profile  Profile?
+  accounts       Account[]
+  sessions       Session[]
+  events         Event[]
+  profile        Profile?
+  importantDates ImportantDate[]
 }
 
 model Event {
@@ -75,14 +76,29 @@ model Event {
 }
 
 model Profile {
-  id        String    @id @default(cuid())
-  name      String?
-  birthDate DateTime?
-  interests String?   @db.Text
-  timezone  String?   @default("UTC")
-  userId    String    @unique
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id         String    @id @default(cuid())
+  name       String?
+  birthDate  DateTime?
+  interests  String?   @db.Text
+  timezone   String?   @default("UTC")
+  hemisphere String?   @default("north")
+  userId     String    @unique
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ImportantDate {
+  id        String   @id @default(cuid())
+  label     String
+  month     Int
+  day       Int
+  year      Int?
+  userId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

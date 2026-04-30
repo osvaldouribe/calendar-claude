@@ -15,13 +15,14 @@ interface Props {
   fullMoons: FullMoon[];
   isLoggedIn: boolean;
   userEmail: string | null;
+  userName: string | null;
 }
 
 const INTER = "'Inter', system-ui, sans-serif";
 
 export default function DashboardClient({
   today, todayInfo, events: initialEvents,
-  zodiacSigns, fullMoons, isLoggedIn, userEmail,
+  zodiacSigns, fullMoons, isLoggedIn, userEmail, userName,
 }: Props) {
   const router = useRouter();
   const todayDate = new Date(today);
@@ -104,17 +105,8 @@ export default function DashboardClient({
                 fontSize: '12px',
                 color: 'var(--ink-light)', textDecoration: 'none', fontFamily: INTER,
               }}>
-                {userEmail}
+                {userName || userEmail}
               </Link>
-              <form action="/api/auth/signout" method="POST">
-                <button type="submit" style={{
-                  fontSize: '12px',
-                  color: 'var(--ink-light)', background: 'none', border: 'none',
-                  cursor: 'pointer', padding: 0, fontFamily: INTER,
-                }}>
-                  Sign out
-                </button>
-              </form>
             </>
           ) : (
             <>

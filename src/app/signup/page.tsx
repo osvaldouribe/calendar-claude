@@ -2,13 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 
 export default function SignupPage() {
   const router = useRouter();
-  const [form, setForm]     = useState({ name: '', email: '', password: '' });
-  const [errors, setErrors] = useState<Record<string, string[]>>({});
+  const [form, setForm]       = useState({ name: '', email: '', password: '' });
+  const [errors, setErrors]   = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -21,8 +20,7 @@ export default function SignupPage() {
     });
     const data = await res.json();
     if (!res.ok) { setErrors(data.error ?? {}); setLoading(false); return; }
-    await signIn('credentials', { email: form.email, password: form.password, redirect: false });
-    router.push('/'); router.refresh();
+    router.push(`/check-email?email=${encodeURIComponent(form.email)}`);
   };
 
   return (
@@ -39,7 +37,7 @@ export default function SignupPage() {
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           {[
-            { key: 'name'     as const, label: 'Name',     type: 'text',     ph: 'Your name',        req: false },
+            { key: 'name'     as const, label: 'Name',     type: 'text',     ph: 'Your name',        req: true  },
             { key: 'email'    as const, label: 'Email',    type: 'email',    ph: 'you@example.com',  req: true  },
             { key: 'password' as const, label: 'Password', type: 'password', ph: 'Min. 8 characters', req: true  },
           ].map(({ key, label, type, ph, req }) => (

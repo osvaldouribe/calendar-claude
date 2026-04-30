@@ -157,22 +157,26 @@ export function getNextFullMoon(fromDate: Date): FullMoon {
   return future[0] ?? FULL_MOONS[FULL_MOONS.length - 1];
 }
 
-export function getSeason(dayOfYear: number): string {
-  if (dayOfYear < 79 || dayOfYear >= 355) return 'Winter';
-  if (dayOfYear < 172) return 'Spring';
-  if (dayOfYear < 265) return 'Summer';
-  return 'Autumn';
+export function getSeason(dayOfYear: number, hemisphere: 'north' | 'south' = 'north'): string {
+  const north = dayOfYear < 79 || dayOfYear >= 355 ? 'Winter'
+              : dayOfYear < 172 ? 'Spring'
+              : dayOfYear < 265 ? 'Summer'
+              : 'Autumn';
+  if (hemisphere === 'north') return north;
+  const flip: Record<string, string> = { Winter: 'Summer', Spring: 'Autumn', Summer: 'Winter', Autumn: 'Spring' };
+  return flip[north];
 }
 
-export function getTodayInfo(date: Date): TodayInfo {
-  const doy = getDayOfYear(date);
+export function getTodayInfo(date: Date, hemisphere: 'north' | 'south' = 'north'): TodayInfo {
+  const doy    = getDayOfYear(date);
+  const zodiac = getZodiacForDay(doy);
   return {
-    zodiac:            getZodiacForDay(doy),
-    element:           getZodiacForDay(doy).element,
-    planet:            getZodiacForDay(doy).planet,
-    tarot:             getZodiacForDay(doy).tarot,
-    energyDescription: getZodiacForDay(doy).energyDescription,
-    season:            getSeason(doy),
+    zodiac,
+    element:           zodiac.element,
+    planet:            zodiac.planet,
+    tarot:             zodiac.tarot,
+    energyDescription: zodiac.energyDescription,
+    season:            getSeason(doy, hemisphere),
     nextFullMoon:      getNextFullMoon(date),
   };
 }
