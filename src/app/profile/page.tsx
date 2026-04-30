@@ -9,7 +9,8 @@ export default async function ProfilePage() {
   const session = await auth();
   if (!session?.user?.id) redirect('/login');
 
-  const [profile, importantDates] = await Promise.all([
+  const [user, profile, importantDates] = await Promise.all([
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { emailVerified: true } }),
     prisma.profile.findUnique({ where: { userId: session.user.id } }),
     prisma.importantDate.findMany({
       where:   { userId: session.user.id },
@@ -17,7 +18,7 @@ export default async function ProfilePage() {
     }),
   ]);
 
-  const emailVerified = !!(session.user as { emailVerified?: string | null }).emailVerified;
+  const emailVerified = !!user?.emailVerified;
 
   return (
     <ProfileClient
