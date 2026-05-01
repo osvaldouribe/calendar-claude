@@ -146,9 +146,9 @@ export default function ProfileClient({
 
   return (
     <div style={{
-      minHeight: '100dvh', background: '#F7F5F0',
+      minHeight: '100dvh', background: 'var(--bg-cream)',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      padding: '40px 20px 60px', fontFamily: INTER,
+      padding: '40px 20px 60px', fontFamily: 'var(--font-inter)',
     }}>
       <div style={{ width: '100%', maxWidth: '400px' }}>
 
@@ -156,8 +156,8 @@ export default function ProfileClient({
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <Link href="/" style={{ color: '#A8A29E', fontSize: '24px', textDecoration: 'none' }}>◎</Link>
           <h1 style={{
-            fontSize: '22px', fontWeight: 300, color: '#1C1917',
-            fontFamily: "'DM Serif Display', Georgia, serif",
+            fontSize: '24px', fontWeight: 400, color: '#1C1917',
+            fontFamily: 'var(--font-serif)',
             margin: '12px 0 4px',
           }}>
             {profile.name || userName || 'Your profile'}

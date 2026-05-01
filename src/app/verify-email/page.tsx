@@ -5,69 +5,80 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 
 function VerifyContent() {
-  const params = useSearchParams();
+  const params  = useSearchParams();
   const success = params.get('success') === '1';
   const error   = params.get('error');
 
   return (
-    <div className="min-h-screen bg-[#F7F5F0] flex flex-col items-center justify-center p-8">
-      <div className="w-full max-w-sm text-center">
-        <p className="text-stone-300 text-2xl mb-3">◎</p>
+    <div style={{
+      minHeight: '100dvh', background: 'var(--bg-cream)',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      padding: '24px', fontFamily: 'var(--font-inter)',
+    }}>
+      <Link href="/" style={{ textDecoration: 'none', marginBottom: '40px', textAlign: 'center' }}>
+        <div style={{ fontSize: '28px', color: 'var(--ink-light)', lineHeight: 1 }}>◎</div>
+        <div style={{
+          fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase',
+          color: 'var(--ink-light)', marginTop: '8px',
+        }}>Cosmic Calendar</div>
+      </Link>
 
-        {success ? (
-          <>
-            <h1 className="text-2xl text-stone-800 mb-2"
-              style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontWeight: 300 }}>
-              Email confirmed
-            </h1>
-            <p className="text-xs text-stone-400 tracking-widest uppercase mb-8"
-              style={{ fontFamily: "'DM Sans', system-ui" }}>
-              Cosmic Calendar
-            </p>
-            <div className="bg-white border border-stone-100 rounded-2xl px-8 py-8 mb-6">
-              <p className="text-sm text-stone-600 leading-relaxed"
-                style={{ fontFamily: "'DM Sans', system-ui" }}>
-                Your account is verified. You&apos;re ready to begin.
-              </p>
-            </div>
-            <Link href="/login"
-              className="block w-full bg-stone-800 text-white rounded-lg py-3 text-sm tracking-wide hover:bg-stone-700 transition-colors mb-4"
-              style={{ fontFamily: "'DM Sans', system-ui" }}>
-              Sign in
-            </Link>
-          </>
-        ) : (
-          <>
-            <h1 className="text-2xl text-stone-800 mb-2"
-              style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontWeight: 300 }}>
-              {error === 'expired' ? 'Link expired' : 'Invalid link'}
-            </h1>
-            <p className="text-xs text-stone-400 tracking-widest uppercase mb-8"
-              style={{ fontFamily: "'DM Sans', system-ui" }}>
-              Cosmic Calendar
-            </p>
-            <div className="bg-white border border-stone-100 rounded-2xl px-8 py-8 mb-6">
-              <p className="text-sm text-stone-600 leading-relaxed"
-                style={{ fontFamily: "'DM Sans', system-ui" }}>
-                {error === 'expired'
-                  ? 'This verification link has expired. Please create a new account to receive a fresh link.'
-                  : 'This link is invalid or has already been used.'}
-              </p>
-            </div>
-            <Link href="/signup"
-              className="block w-full bg-stone-800 text-white rounded-lg py-3 text-sm tracking-wide hover:bg-stone-700 transition-colors mb-4"
-              style={{ fontFamily: "'DM Sans', system-ui" }}>
-              Back to sign up
-            </Link>
-          </>
-        )}
-
-        <div className="text-center">
-          <Link href="/" className="text-xs text-stone-300 hover:text-stone-500 transition-colors">
-            ← Back to calendar
-          </Link>
+      <div style={{
+        width: '100%', maxWidth: '360px',
+        background: '#fff', borderRadius: '16px',
+        border: '1px solid var(--border)',
+        padding: '36px 32px',
+        boxShadow: '0 2px 24px rgba(0,0,0,0.04)',
+        textAlign: 'center',
+      }}>
+        <div style={{
+          width: '48px', height: '48px', borderRadius: '12px',
+          background: success ? '#F0FDF4' : '#FEF2F2',
+          border: `1px solid ${success ? '#BBF7D0' : '#FECACA'}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '22px', margin: '0 auto 20px',
+        }}>
+          {success ? '✓' : '✕'}
         </div>
+
+        <h1 style={{
+          fontFamily: 'var(--font-serif)', fontWeight: 400,
+          fontSize: '26px', color: 'var(--ink)',
+          margin: '0 0 12px',
+        }}>
+          {success ? 'Email confirmed' : error === 'expired' ? 'Link expired' : 'Invalid link'}
+        </h1>
+
+        <p style={{
+          fontSize: '14px', color: 'var(--ink-mid)',
+          lineHeight: 1.6, margin: '0 0 28px',
+        }}>
+          {success
+            ? 'Your account is verified. You\'re ready to begin.'
+            : error === 'expired'
+            ? 'This link has expired. Sign up again to get a fresh verification email.'
+            : 'This link is invalid or has already been used.'}
+        </p>
+
+        <Link href={success ? '/login' : '/signup'} style={{
+          display: 'block', width: '100%',
+          padding: '13px', background: 'var(--ink)',
+          color: '#fff', borderRadius: '8px',
+          fontSize: '13px', letterSpacing: '0.04em',
+          textDecoration: 'none', textAlign: 'center',
+          boxSizing: 'border-box',
+        }}>
+          {success ? 'Sign in' : 'Back to sign up'}
+        </Link>
       </div>
+
+      <Link href="/" style={{
+        marginTop: '20px', fontSize: '12px',
+        color: 'var(--ink-light)', textDecoration: 'none',
+      }}>
+        ← Back to calendar
+      </Link>
     </div>
   );
 }

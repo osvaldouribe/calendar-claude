@@ -21,48 +21,101 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F5F0] flex flex-col items-center justify-center p-8">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-10">
-          <p className="text-stone-300 text-2xl mb-3">◎</p>
-          <h1 className="text-2xl text-stone-800 mb-1"
-            style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontWeight: 300 }}>
-            Welcome back
-          </h1>
-          <p className="text-xs text-stone-400 tracking-widest uppercase"
-            style={{ fontFamily: "'DM Sans', system-ui" }}>Cosmic Calendar</p>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <div style={{
+      minHeight: '100dvh', background: 'var(--bg-cream)',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      padding: '24px', fontFamily: 'var(--font-inter)',
+    }}>
+      {/* Logo row */}
+      <Link href="/" style={{ textDecoration: 'none', marginBottom: '40px', textAlign: 'center' }}>
+        <div style={{ fontSize: '28px', color: 'var(--ink-light)', lineHeight: 1 }}>◎</div>
+        <div style={{
+          fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase',
+          color: 'var(--ink-light)', marginTop: '8px', fontFamily: 'var(--font-inter)',
+        }}>Cosmic Calendar</div>
+      </Link>
+
+      {/* Card */}
+      <div style={{
+        width: '100%', maxWidth: '360px',
+        background: '#fff', borderRadius: '16px',
+        border: '1px solid var(--border)',
+        padding: '36px 32px',
+        boxShadow: '0 2px 24px rgba(0,0,0,0.04)',
+      }}>
+        <h1 style={{
+          fontFamily: 'var(--font-serif)', fontWeight: 400,
+          fontSize: '26px', color: 'var(--ink)',
+          margin: '0 0 6px', textAlign: 'center',
+        }}>
+          Welcome back
+        </h1>
+        <p style={{
+          fontSize: '12px', color: 'var(--ink-light)',
+          textAlign: 'center', margin: '0 0 28px',
+          fontFamily: 'var(--font-inter)',
+        }}>
+          Sign in to your account
+        </p>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {[
             { id: 'email',    type: 'email',    val: email,    set: setEmail,    label: 'Email',    ph: 'you@example.com' },
             { id: 'password', type: 'password', val: password, set: setPassword, label: 'Password', ph: '••••••••' },
           ].map(({ id, type, val, set, label, ph }) => (
             <div key={id}>
-              <label htmlFor={id}
-                className="block text-xs tracking-widest uppercase text-stone-400 mb-2"
-                style={{ fontFamily: "'DM Sans', system-ui" }}>{label}</label>
-              <input id={id} type={type} value={val} required placeholder={ph}
+              <label htmlFor={id} style={{
+                display: 'block', fontSize: '10px', letterSpacing: '0.12em',
+                textTransform: 'uppercase', color: 'var(--ink-light)',
+                marginBottom: '6px', fontFamily: 'var(--font-inter)',
+              }}>{label}</label>
+              <input
+                id={id} type={type} value={val} required placeholder={ph}
                 onChange={(e) => set(e.target.value)}
-                className="w-full border border-stone-200 rounded-lg px-4 py-3 text-sm text-stone-700 bg-white focus:outline-none focus:border-stone-400 placeholder:text-stone-300 transition-colors"
-                style={{ fontFamily: "'DM Sans', system-ui" }} />
+                style={{
+                  width: '100%', padding: '11px 14px',
+                  border: '1px solid var(--border)', borderRadius: '8px',
+                  fontSize: '14px', color: 'var(--ink)', background: '#FAFAF9',
+                  fontFamily: 'var(--font-inter)', outline: 'none',
+                  boxSizing: 'border-box', transition: 'border-color 0.15s',
+                }}
+                onFocus={e => e.target.style.borderColor = '#A8A29E'}
+                onBlur={e  => e.target.style.borderColor = 'var(--border)'}
+              />
             </div>
           ))}
-          {error && <p className="text-xs text-red-400 text-center">{error}</p>}
-          <button type="submit" disabled={loading}
-            className="w-full bg-stone-800 text-white rounded-lg py-3 text-sm tracking-wide hover:bg-stone-700 disabled:opacity-50 transition-colors mt-2"
-            style={{ fontFamily: "'DM Sans', system-ui" }}>
+
+          {error && (
+            <p style={{
+              fontSize: '12px', color: '#B45309',
+              background: '#FEF3C7', border: '1px solid #FDE68A',
+              borderRadius: '8px', padding: '8px 12px', margin: 0,
+            }}>{error}</p>
+          )}
+
+          <button type="submit" disabled={loading} style={{
+            width: '100%', padding: '13px',
+            background: loading ? 'var(--ink-mid)' : 'var(--ink)',
+            color: '#fff', border: 'none', borderRadius: '8px',
+            fontSize: '13px', letterSpacing: '0.04em',
+            fontFamily: 'var(--font-inter)', cursor: loading ? 'default' : 'pointer',
+            transition: 'background 0.15s', marginTop: '4px',
+          }}>
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
-        <p className="text-center text-xs text-stone-400 mt-6"
-          style={{ fontFamily: "'DM Sans', system-ui" }}>
-          No account?{' '}
-          <Link href="/signup" className="text-stone-600 hover:text-stone-800 underline underline-offset-2">Join</Link>
-        </p>
-        <div className="text-center mt-4">
-          <Link href="/" className="text-xs text-stone-300 hover:text-stone-500 transition-colors">← Back to calendar</Link>
-        </div>
       </div>
+
+      <p style={{
+        marginTop: '20px', fontSize: '13px',
+        color: 'var(--ink-light)', fontFamily: 'var(--font-inter)',
+      }}>
+        No account?{' '}
+        <Link href="/signup" style={{ color: 'var(--ink)', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
+          Join
+        </Link>
+      </p>
     </div>
   );
 }

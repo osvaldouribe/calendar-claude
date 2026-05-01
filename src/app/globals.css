@@ -5,6 +5,7 @@
 @layer base {
   :root {
     --font-inter: 'Inter', system-ui, sans-serif;
+    --font-serif: 'DM Serif Display', Georgia, serif;
     --bg-cream: #F7F5F0;
     --ink: #1C1917;
     --ink-mid: #6B6560;
