@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import * as bcrypt from 'bcryptjs';
 import { z } from 'zod';
-import { sendVerificationEmail } from '@/lib/email';
-import { randomBytes } from 'crypto';
 
 const SignupSchema = z.object({
   email:    z.string().email(),
@@ -19,28 +17,17 @@ export async function POST(req: NextRequest) {
   const existing = await prisma.user.findUnique({ where: { email } });
 
   if (existing) {
-    // Account exists and is verified — reject
-    if (existing.emailVerified) {
-      return NextResponse.json({ error: { email: ['Email already in use'] } }, { status: 409 });
-    }
-    // Account exists but never verified — resend the verification email
-    await prisma.verificationToken.deleteMany({ where: { identifier: email } });
-    const token   = randomBytes(32).toString('hex');
-    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    await prisma.verificationToken.create({ data: { identifier: email, token, expires } });
-    await sendVerificationEmail(email, token);
-    return NextResponse.json({ id: existing.id, email: existing.email }, { status: 201 });
+    return NextResponse.json({ error: { email: ['Email already in use'] } }, { status: 409 });
   }
 
   const hashed = await bcrypt.hash(password, 12);
   const user = await prisma.user.create({
-    data: { email, name: name ?? null, password: hashed, profile: { create: { name: name ?? null } } },
+    data: {
+      email, name: name ?? null, password: hashed,
+      emailVerified: new Date(),
+      profile: { create: { name: name ?? null } },
+    },
   });
-
-  const token   = randomBytes(32).toString('hex');
-  const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  await prisma.verificationToken.create({ data: { identifier: email, token, expires } });
-  await sendVerificationEmail(email, token);
 
   return NextResponse.json({ id: user.id, email: user.email }, { status: 201 });
 }

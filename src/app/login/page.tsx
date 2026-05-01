@@ -1,10 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 
-export default function LoginPage() {
+function LoginForm() {
+  const params  = useSearchParams();
+  const welcome = params.get('welcome') === '1';
+
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [error, setError]       = useState('');
@@ -47,14 +51,14 @@ export default function LoginPage() {
           fontSize: '26px', color: 'var(--ink)',
           margin: '0 0 6px', textAlign: 'center',
         }}>
-          Welcome back
+          {welcome ? 'Account created' : 'Welcome back'}
         </h1>
         <p style={{
           fontSize: '12px', color: 'var(--ink-light)',
           textAlign: 'center', margin: '0 0 28px',
           fontFamily: 'var(--font-inter)',
         }}>
-          Sign in to your account
+          {welcome ? 'Sign in to get started' : 'Sign in to your account'}
         </p>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -115,5 +119,13 @@ export default function LoginPage() {
         </Link>
       </p>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -12,7 +12,6 @@ interface ImportantDate { id: string; label: string; month: number; day: number;
 interface Props {
   userEmail:      string;
   userName:       string;
-  emailVerified:  boolean;
   initialProfile: { name: string; birthDate: string; hemisphere: 'north' | 'south' };
   initialDates:   ImportantDate[];
 }
@@ -63,7 +62,7 @@ function Row({ children, last }: { children: React.ReactNode; last?: boolean }) 
 }
 
 export default function ProfileClient({
-  userEmail, userName, emailVerified,
+  userEmail, userName,
   initialProfile, initialDates,
 }: Props) {
   const router = useRouter();
@@ -201,15 +200,6 @@ export default function ProfileClient({
           <p style={{ fontSize: '12px', color: '#A8A29E', letterSpacing: '0.08em' }}>
             {userEmail}
           </p>
-          {!emailVerified && (
-            <div style={{
-              marginTop: '12px', fontSize: '12px', color: '#92400E',
-              background: '#FEF3C7', border: '1px solid #FCD34D',
-              borderRadius: '8px', padding: '8px 14px',
-            }}>
-              Please verify your email — check your inbox.
-            </div>
-          )}
         </div>
 
         {/* Personal */}

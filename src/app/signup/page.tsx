@@ -20,7 +20,7 @@ export default function SignupPage() {
     });
     const data = await res.json();
     if (!res.ok) { setErrors(data.error ?? {}); setLoading(false); return; }
-    router.push(`/check-email?email=${encodeURIComponent(form.email)}`);
+    router.push('/login?welcome=1');
   };
 
   const fields = [
