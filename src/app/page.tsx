@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getTodayInfo, ZODIAC_SIGNS, FULL_MOONS } from '@/lib/cosmic-data';
+import { getTodayInfo, getUserBirthInfo, ZODIAC_SIGNS, FULL_MOONS } from '@/lib/cosmic-data';
+import type { UserBirthInfo } from '@/lib/cosmic-data';
 import DashboardClient from '@/components/DashboardClient';
 
 export const dynamic = 'force-dynamic';
@@ -11,6 +12,8 @@ export default async function HomePage() {
   const year    = today.getFullYear();
 
   let hemisphere: 'north' | 'south' = 'north';
+  let profileBirthDate: Date | null = null;
+  let userBirthInfo: UserBirthInfo | null = null;
   let events: Array<{
     id: string; title: string; date: string;
     description: string | null; color: string | null;
@@ -37,6 +40,7 @@ export default async function HomePage() {
 
     // Birthdate → this year's occurrence
     if (profile?.birthDate) {
+      profileBirthDate = profile.birthDate;
       const bd = profile.birthDate;
       const thisYear = new Date(year, bd.getMonth(), bd.getDate());
       events.push({
@@ -61,6 +65,9 @@ export default async function HomePage() {
   }
 
   const todayInfo = getTodayInfo(today, hemisphere);
+  if (profileBirthDate) {
+    userBirthInfo = getUserBirthInfo(profileBirthDate, todayInfo.element);
+  }
 
   return (
     <DashboardClient
@@ -72,6 +79,7 @@ export default async function HomePage() {
       isLoggedIn={!!session?.user}
       userEmail={session?.user?.email ?? null}
       userName={session?.user?.name ?? null}
+      userBirthInfo={userBirthInfo}
     />
   );
 }

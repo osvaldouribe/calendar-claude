@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import CircularCalendar, { type CalendarEvent } from './CircularCalendar';
 import TodayPanel from './TodayPanel';
-import type { TodayInfo, ZodiacSign, FullMoon } from '@/lib/cosmic-data';
+import type { TodayInfo, ZodiacSign, FullMoon, UserBirthInfo } from '@/lib/cosmic-data';
 
 interface Props {
   today: string;
@@ -16,13 +16,14 @@ interface Props {
   isLoggedIn: boolean;
   userEmail: string | null;
   userName: string | null;
+  userBirthInfo?: UserBirthInfo | null;
 }
 
 const INTER = "'Inter', system-ui, sans-serif";
 
 export default function DashboardClient({
   today, todayInfo, events: initialEvents,
-  zodiacSigns, fullMoons, isLoggedIn, userEmail, userName,
+  zodiacSigns, fullMoons, isLoggedIn, userEmail, userName, userBirthInfo,
 }: Props) {
   const router = useRouter();
   const todayDate = new Date(today);
@@ -75,6 +76,7 @@ export default function DashboardClient({
       isLoggedIn={isLoggedIn}
       onAddEvent={handleAddEvent}
       onClearSelection={handleClearSelection}
+      userBirthInfo={userBirthInfo}
     />
   );
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import type { TodayInfo } from '@/lib/cosmic-data';
+import type { TodayInfo, UserBirthInfo } from '@/lib/cosmic-data';
 import { ELEMENT_COLORS } from '@/lib/cosmic-data';
 import type { CalendarEvent } from './CircularCalendar';
 
@@ -12,6 +12,7 @@ interface TodayPanelProps {
   isLoggedIn: boolean;
   onAddEvent?: (data: { title: string; date: string; description: string }) => Promise<void>;
   onClearSelection?: () => void;
+  userBirthInfo?: UserBirthInfo | null;
 }
 
 const INTER = "'Inter', system-ui, sans-serif";
@@ -52,7 +53,7 @@ function Badge({ element }: { element: string }) {
 }
 
 export default function TodayPanel({
-  today, todayInfo, selectedEvent, isLoggedIn, onAddEvent, onClearSelection,
+  today, todayInfo, selectedEvent, isLoggedIn, onAddEvent, onClearSelection, userBirthInfo,
 }: TodayPanelProps) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: '', date: '', description: '' });
@@ -143,6 +144,34 @@ export default function TodayPanel({
       </p>
 
       {HR}
+
+      {/* Birth cosmic signature */}
+      {userBirthInfo && (
+        <>
+          <p style={{ ...lbl, marginBottom: S.sm }}>Your birth</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: S.sm }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: S.xs }}>
+              <span style={{ fontSize: '18px', lineHeight: 1 }}>{userBirthInfo.westernSign.symbol}</span>
+              <span style={{ fontFamily: INTER, fontSize: '14px', fontWeight: 500, color: 'var(--ink)' }}>
+                {userBirthInfo.westernSign.name}
+              </span>
+            </div>
+            <Badge element={userBirthInfo.westernSign.element} />
+          </div>
+          <div style={{ borderTop: '1px solid var(--border)' }}>
+            <Row label="Planet" value={userBirthInfo.westernSign.planet} />
+            <Row label="Tarot"  value={userBirthInfo.westernSign.tarot} />
+            <Row label="Chinese year" value={`${userBirthInfo.chineseAnimal.glyph} ${userBirthInfo.chineseAnimal.name} · ${userBirthInfo.chineseAnimal.trait}`} />
+            <Row label="Element" value={`${userBirthInfo.chineseElement.name} · ${userBirthInfo.chineseElement.quality}`} />
+          </div>
+          {HR}
+          <p style={{ fontFamily: INTER, fontSize: '13px', fontStyle: 'italic',
+            color: 'var(--ink-mid)', lineHeight: 1.6, margin: 0 }}>
+            {userBirthInfo.personalNote}
+          </p>
+          {HR}
+        </>
+      )}
 
       {/* Full Moon */}
       <p style={{ ...lbl, marginBottom: S.sm }}>Next full moon</p>

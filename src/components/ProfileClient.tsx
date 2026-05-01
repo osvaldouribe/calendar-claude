@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import Link from 'next/link';
+import { getTodayInfo, getUserBirthInfo, ELEMENT_COLORS } from '@/lib/cosmic-data';
+import type { UserBirthInfo } from '@/lib/cosmic-data';
 
 interface ImportantDate { id: string; label: string; month: number; day: number; year: number | null }
 
@@ -76,6 +78,17 @@ export default function ProfileClient({
   const [showDelete, setShowDelete] = useState(false);
   const [deleting, setDeleting]     = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+
+  const cosmicBirth = useMemo((): UserBirthInfo | null => {
+    if (!profile.birthDate) return null;
+    try {
+      const bd = new Date(profile.birthDate + 'T12:00:00');
+      const todayInfo = getTodayInfo(new Date());
+      return getUserBirthInfo(bd, todayInfo.element);
+    } catch {
+      return null;
+    }
+  }, [profile.birthDate]);
 
   async function saveProfile(e: React.FormEvent) {
     e.preventDefault(); setSaving(true);
@@ -217,6 +230,64 @@ export default function ProfileClient({
             {saved ? '✓ Saved' : saving ? 'Saving…' : 'Save profile'}
           </button>
         </form>
+
+        {/* Cosmic signature */}
+        {cosmicBirth && (
+          <Section title="Cosmic signature">
+            <Row>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '22px', lineHeight: 1 }}>{cosmicBirth.westernSign.symbol}</span>
+                  <div>
+                    <p style={{ fontSize: '14px', fontWeight: 500, color: '#1C1917', margin: 0 }}>
+                      {cosmicBirth.westernSign.name}
+                    </p>
+                    <p style={{ fontSize: '11px', color: '#A8A29E', margin: '2px 0 0' }}>
+                      {cosmicBirth.westernSign.element.charAt(0).toUpperCase() + cosmicBirth.westernSign.element.slice(1)} · {cosmicBirth.westernSign.planet}
+                    </p>
+                  </div>
+                </div>
+                {(() => {
+                  const c = ELEMENT_COLORS[cosmicBirth.westernSign.element];
+                  return (
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '5px',
+                      padding: '3px 9px', borderRadius: '99px',
+                      backgroundColor: c.bg, color: c.text, fontSize: '11px',
+                      fontFamily: 'var(--font-inter)',
+                    }}>
+                      <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: c.dot }} />
+                      {cosmicBirth.westernSign.tarot}
+                    </span>
+                  );
+                })()}
+              </div>
+              <div style={{ borderTop: '1px solid #F0EDE8', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span style={{ color: '#A8A29E' }}>Chinese year</span>
+                  <span style={{ color: '#1C1917' }}>
+                    {cosmicBirth.chineseAnimal.glyph} {cosmicBirth.chineseAnimal.name}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span style={{ color: '#A8A29E' }}>Element</span>
+                  <span style={{ color: '#1C1917' }}>{cosmicBirth.chineseElement.name}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span style={{ color: '#A8A29E' }}>Trait</span>
+                  <span style={{ color: '#1C1917', textAlign: 'right', maxWidth: '55%' }}>
+                    {cosmicBirth.chineseAnimal.trait}
+                  </span>
+                </div>
+              </div>
+            </Row>
+            <Row last>
+              <p style={{ fontSize: '12px', fontStyle: 'italic', color: '#6B6560', lineHeight: 1.6, margin: 0 }}>
+                {cosmicBirth.personalNote}
+              </p>
+            </Row>
+          </Section>
+        )}
 
         {/* Important dates */}
         <Section title="Important dates">

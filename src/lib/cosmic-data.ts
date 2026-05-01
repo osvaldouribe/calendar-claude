@@ -180,3 +180,77 @@ export function getTodayInfo(date: Date, hemisphere: 'north' | 'south' = 'north'
     nextFullMoon:      getNextFullMoon(date),
   };
 }
+
+// ── Chinese Zodiac ────────────────────────────────────────────────────────────
+
+const CHINESE_ANIMALS = [
+  { name: 'Rat',     glyph: '子', trait: 'Quick, adaptable, resourceful'  },
+  { name: 'Ox',      glyph: '丑', trait: 'Patient, reliable, methodical'  },
+  { name: 'Tiger',   glyph: '寅', trait: 'Bold, intense, unpredictable'   },
+  { name: 'Rabbit',  glyph: '卯', trait: 'Gentle, intuitive, diplomatic'  },
+  { name: 'Dragon',  glyph: '辰', trait: 'Powerful, lucky, imaginative'   },
+  { name: 'Snake',   glyph: '巳', trait: 'Wise, mysterious, perceptive'   },
+  { name: 'Horse',   glyph: '午', trait: 'Free, energetic, independent'   },
+  { name: 'Goat',    glyph: '未', trait: 'Creative, calm, compassionate'  },
+  { name: 'Monkey',  glyph: '申', trait: 'Clever, playful, versatile'     },
+  { name: 'Rooster', glyph: '酉', trait: 'Observant, precise, confident'  },
+  { name: 'Dog',     glyph: '戌', trait: 'Loyal, honest, protective'      },
+  { name: 'Pig',     glyph: '亥', trait: 'Generous, diligent, sincere'    },
+] as const;
+
+const CHINESE_ELEMENTS = [
+  { name: 'Metal', quality: 'Strength & persistence' },
+  { name: 'Water', quality: 'Wisdom & intuition'     },
+  { name: 'Wood',  quality: 'Growth & creativity'    },
+  { name: 'Fire',  quality: 'Passion & expression'   },
+  { name: 'Earth', quality: 'Balance & nurture'      },
+] as const;
+
+// How each birth element reads the current zodiac element
+const ELEMENT_INTERACTIONS: Record<Element, Record<Element, string>> = {
+  fire: {
+    fire:  'Two flames meet. Your natural intensity finds a mirror this season — channel the surge into creation before it burns itself out.',
+    earth: 'Your fire meets grounding earth. The urge to act slows into something more deliberate. Let this season temper your spark into lasting work.',
+    air:   'Wind feeds your flame. Ideas ignite effortlessly and your voice carries further than usual. Speak, begin, share — the moment is listening.',
+    water: 'Steam rises where fire meets water. Drive and feeling create a friction that can forge something entirely new. Honor both the impulse and the depth.',
+  },
+  earth: {
+    fire:  'Fire warms your steady ground. A season to accelerate what you\'ve been building slowly. Your patience is now an asset that the current can mobilize.',
+    earth: 'Earth upon earth — deep, methodical, unshakeable. This is your season to consolidate. No sudden moves; patient cultivation yields everything.',
+    air:   'Wind crosses your quiet field. Mental energy visits your practical world. Let the ideas land, and decide which ones deserve roots.',
+    water: 'Water nourishes your soil. Intuition enriches your natural pragmatism. What you feel and what you plan merge into fertile, ready ground.',
+  },
+  air: {
+    fire:  'Your ideas catch fire this season. What you\'ve been thinking finds energy and momentum. Act on at least one vision before the current moves on.',
+    earth: 'Your mind seeks structure to land in. Let the earth season anchor your best ideas into tangible form — build, don\'t only imagine.',
+    air:   'Pure thought in an airy season. Your mind is sharp but may spin. Ground at least one idea before the current carries you somewhere else entirely.',
+    water: 'Emotional currents flow beneath your words. Depth enriches your natural clarity this season. Listen for what is felt, not only what is said.',
+  },
+  water: {
+    fire:  'Your depth finds a spark. This season stirs dormant drives and warms your emotional world. Let it move you rather than overwhelm you.',
+    earth: 'Your flow finds solid banks. The season gives shape to what you feel. Trust what rises from below and let intuition take form.',
+    air:   'Your feeling gets a voice. This air season helps you articulate what usually stays submerged. Name what you carry — it is ready to be heard.',
+    water: 'Still waters run deep this season. You feel everything acutely. A time for inner work, healing, and trusting your own quiet current.',
+  },
+};
+
+export interface UserBirthInfo {
+  westernSign:     ZodiacSign;
+  chineseAnimal:   typeof CHINESE_ANIMALS[number];
+  chineseElement:  typeof CHINESE_ELEMENTS[number];
+  personalNote:    string; // birth element × current element
+}
+
+export function getUserBirthInfo(birthDate: Date, currentElement: Element): UserBirthInfo {
+  const doy          = getDayOfYear(birthDate);
+  const westernSign  = getZodiacForDay(doy);
+  const year         = birthDate.getFullYear();
+  const animalIndex  = ((year - 1900) % 12 + 12) % 12;
+  const elementIndex = Math.floor((year % 10) / 2);
+  return {
+    westernSign,
+    chineseAnimal:  CHINESE_ANIMALS[animalIndex],
+    chineseElement: CHINESE_ELEMENTS[elementIndex],
+    personalNote:   ELEMENT_INTERACTIONS[westernSign.element][currentElement],
+  };
+}
