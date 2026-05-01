@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 export default async function HomePage() {
   const session = await auth();
   const today   = new Date();
+  const year    = today.getFullYear();
 
   let hemisphere: 'north' | 'south' = 'north';
   let events: Array<{
@@ -16,17 +17,47 @@ export default async function HomePage() {
   }> = [];
 
   if (session?.user?.id) {
-    const [raw, profile] = await Promise.all([
+    const [rawEvents, profile, importantDates] = await Promise.all([
       prisma.event.findMany({ where: { userId: session.user.id }, orderBy: { date: 'asc' } }),
-      prisma.profile.findUnique({ where: { userId: session.user.id }, select: { hemisphere: true } }),
+      prisma.profile.findUnique({
+        where:  { userId: session.user.id },
+        select: { hemisphere: true, birthDate: true, name: true },
+      }),
+      prisma.importantDate.findMany({ where: { userId: session.user.id } }),
     ]);
-    events = raw.map((e) => ({
+
+    if (profile?.hemisphere === 'south') hemisphere = 'south';
+
+    // User-marked events
+    events = rawEvents.map(e => ({
       id: e.id, title: e.title,
       date: e.date.toISOString(),
-      description: e.description,
-      color: e.color,
+      description: e.description, color: e.color,
     }));
-    if (profile?.hemisphere === 'south') hemisphere = 'south';
+
+    // Birthdate → this year's occurrence
+    if (profile?.birthDate) {
+      const bd = profile.birthDate;
+      const thisYear = new Date(year, bd.getMonth(), bd.getDate());
+      events.push({
+        id:          '__birthday__',
+        title:       'Birthday' + (profile.name ? ` · ${profile.name}` : ''),
+        date:        thisYear.toISOString(),
+        description: null, color: null,
+      });
+    }
+
+    // Important dates → this year's occurrences
+    for (const d of importantDates) {
+      const thisYear = new Date(year, d.month - 1, d.day);
+      events.push({
+        id:          d.id,
+        title:       d.label,
+        date:        thisYear.toISOString(),
+        description: d.year ? `Since ${d.year} · ${year - d.year} years` : null,
+        color:       null,
+      });
+    }
   }
 
   const todayInfo = getTodayInfo(today, hemisphere);
