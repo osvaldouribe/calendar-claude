@@ -235,18 +235,27 @@ export default function CircularCalendar({
       const a = dayToAngle(getDayOfYear(d), daysInYear);
       const p = polar(R.eventRing, a);
       const active = selectedEventId === ev.id;
+      const dateStr = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
       return (
-        <g key={ev.id} style={{ cursor: 'pointer' }} onClick={() => onEventClick?.(ev)}>
+        <g key={ev.id} style={{ cursor: 'pointer' }}
+          onClick={() => onEventClick?.(ev)}
+          onMouseEnter={(e) => setTip({
+            ...pos(e),
+            title: ev.title,
+            rows: [{ label: 'Date', value: dateStr }],
+            note: ev.description ?? undefined,
+          })}
+          onMouseMove={move}
+          onMouseLeave={clear}
+        >
           {active && <circle cx={p.x} cy={p.y} r={10} fill={EVENT_COLOR} opacity="0.15" />}
           <circle cx={p.x} cy={p.y} r={active ? 5.5 : 4}
             fill={EVENT_COLOR} stroke={CREAM} strokeWidth="1.5"
-            style={{ transition: 'r 0.15s' }}>
-            <title>{ev.title}</title>
-          </circle>
+            style={{ transition: 'r 0.15s' }} />
         </g>
       );
     }),
-  [events, year, daysInYear, selectedEventId, onEventClick, EVENT_COLOR]);
+  [events, year, daysInYear, selectedEventId, onEventClick, EVENT_COLOR, pos, move, clear]);
 
   const renderToday = useCallback(() => {
     const tip_ = polar(R.outer, todayAngle);

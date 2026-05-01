@@ -10,6 +10,14 @@ const CreateSchema = z.object({
   year:  z.number().int().min(1900).max(2100).nullable().optional(),
 });
 
+const UpdateSchema = z.object({
+  id:    z.string().min(1),
+  label: z.string().min(1).max(100),
+  month: z.number().int().min(1).max(12),
+  day:   z.number().int().min(1).max(31),
+  year:  z.number().int().min(1900).max(2100).nullable().optional(),
+});
+
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -32,6 +40,24 @@ export async function POST(req: NextRequest) {
     data: { ...parsed.data, year: parsed.data.year ?? null, userId: session.user.id },
   });
   return NextResponse.json(date, { status: 201 });
+}
+
+export async function PATCH(req: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const parsed = UpdateSchema.safeParse(await req.json());
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+
+  const { id, ...data } = parsed.data;
+  const existing = await prisma.importantDate.findFirst({ where: { id, userId: session.user.id } });
+  if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+  const updated = await prisma.importantDate.update({
+    where: { id },
+    data:  { ...data, year: data.year ?? null },
+  });
+  return NextResponse.json(updated);
 }
 
 export async function DELETE(req: NextRequest) {

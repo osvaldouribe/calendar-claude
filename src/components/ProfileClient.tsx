@@ -75,6 +75,9 @@ export default function ProfileClient({
   const [addOpen, setAddOpen]       = useState(false);
   const [newDate, setNewDate]       = useState({ label: '', month: 1, day: 1, year: '' });
   const [addLoading, setAddLoading] = useState(false);
+  const [editingId, setEditingId]   = useState<string | null>(null);
+  const [editForm, setEditForm]     = useState({ label: '', month: 1, day: 1, year: '' });
+  const [editLoading, setEditLoading] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [deleting, setDeleting]     = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -119,6 +122,32 @@ export default function ProfileClient({
       setAddOpen(false);
     }
     setAddLoading(false);
+  }
+
+  function startEdit(d: ImportantDate) {
+    setEditingId(d.id);
+    setEditForm({ label: d.label, month: d.month, day: d.day, year: d.year ? String(d.year) : '' });
+  }
+
+  async function saveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingId) return;
+    setEditLoading(true);
+    const res = await fetch('/api/important-dates', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: editingId, label: editForm.label,
+        month: editForm.month, day: editForm.day,
+        year: editForm.year ? parseInt(editForm.year) : null,
+      }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setDates(prev => prev.map(d => d.id === editingId ? updated : d).sort((a, b) => a.month - b.month || a.day - b.day));
+      setEditingId(null);
+    }
+    setEditLoading(false);
   }
 
   async function removeDate(id: string) {
@@ -300,20 +329,76 @@ export default function ProfileClient({
           )}
           {dates.map((d, i) => (
             <Row key={d.id} last={i === dates.length - 1 && !addOpen}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <p style={{ fontSize: '14px', color: '#1C1917', margin: 0 }}>{d.label}</p>
-                  <p style={{ fontSize: '12px', color: '#A8A29E', margin: '3px 0 0' }}>
-                    {MONTH_NAMES[d.month - 1]} {d.day}{d.year ? ` · ${d.year}` : ''}
-                  </p>
+              {editingId === d.id ? (
+                <form onSubmit={saveEdit} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <input type="text" required value={editForm.label}
+                    onChange={e => setEditForm(p => ({ ...p, label: e.target.value }))}
+                    style={field}
+                    onFocus={e => e.target.style.borderColor = '#A8A29E'}
+                    onBlur={e  => e.target.style.borderColor = '#E8E4DC'} />
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <select value={editForm.month}
+                      onChange={e => setEditForm(p => ({ ...p, month: parseInt(e.target.value) }))}
+                      style={{ ...field, flex: 1 }}>
+                      {MONTH_NAMES.map((m, idx) => <option key={m} value={idx + 1}>{m}</option>)}
+                    </select>
+                    <select value={editForm.day}
+                      onChange={e => setEditForm(p => ({ ...p, day: parseInt(e.target.value) }))}
+                      style={{ ...field, flex: 1 }}>
+                      {Array.from({ length: 31 }, (_, idx) => idx + 1).map(n => (
+                        <option key={n} value={n}>{n}</option>
+                      ))}
+                    </select>
+                    <input type="number" placeholder="Year" min={1900} max={2100}
+                      value={editForm.year}
+                      onChange={e => setEditForm(p => ({ ...p, year: e.target.value }))}
+                      style={{ ...field, flex: 1 }}
+                      onFocus={e => e.target.style.borderColor = '#A8A29E'}
+                      onBlur={e  => e.target.style.borderColor = '#E8E4DC'} />
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button type="submit" disabled={editLoading} style={{
+                      flex: 1, background: '#1C1917', color: '#fff', border: 'none',
+                      borderRadius: '8px', padding: '9px', fontSize: '13px',
+                      fontFamily: 'var(--font-inter)', cursor: editLoading ? 'default' : 'pointer',
+                      opacity: editLoading ? 0.6 : 1,
+                    }}>
+                      {editLoading ? 'Saving…' : 'Save'}
+                    </button>
+                    <button type="button" onClick={() => setEditingId(null)} style={{
+                      flex: 1, background: '#fff', color: '#6B6560',
+                      border: '1px solid #E8E4DC', borderRadius: '8px',
+                      padding: '9px', fontSize: '13px',
+                      fontFamily: 'var(--font-inter)', cursor: 'pointer',
+                    }}>
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <p style={{ fontSize: '14px', color: '#1C1917', margin: 0 }}>{d.label}</p>
+                    <p style={{ fontSize: '12px', color: '#A8A29E', margin: '3px 0 0' }}>
+                      {MONTH_NAMES[d.month - 1]} {d.day}{d.year ? ` · ${d.year}` : ''}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                    <button onClick={() => startEdit(d)} aria-label="Edit"
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: '#C8B8B0', fontSize: '14px', lineHeight: 1,
+                        padding: '4px 6px', borderRadius: '4px',
+                      }}>✎</button>
+                    <button onClick={() => removeDate(d.id)} aria-label="Remove"
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: '#C8B8B0', fontSize: '20px', lineHeight: 1,
+                        padding: '4px 6px', borderRadius: '4px',
+                      }}>×</button>
+                  </div>
                 </div>
-                <button onClick={() => removeDate(d.id)} aria-label="Remove"
-                  style={{
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    color: '#C8B8B0', fontSize: '20px', lineHeight: 1,
-                    padding: '4px 6px', borderRadius: '4px',
-                  }}>×</button>
-              </div>
+              )}
             </Row>
           ))}
 

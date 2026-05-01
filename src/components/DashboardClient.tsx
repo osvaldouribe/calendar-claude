@@ -41,20 +41,28 @@ export default function DashboardClient({
     setSheetOpen(false);
   }, []);
 
-  const handleAddEvent = useCallback(async (data: {
-    title: string; date: string; description: string;
+  const handleAddDate = useCallback(async (data: {
+    label: string; month: number; day: number; year: number | null;
   }) => {
-    const res = await fetch('/api/events', {
+    const res = await fetch('/api/important-dates', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
     if (res.ok) {
       const created = await res.json();
-      setEvents(prev => [...prev, created]);
+      const yr = todayDate.getFullYear();
+      const calEvent = {
+        id:          created.id,
+        title:       created.label,
+        date:        new Date(yr, created.month - 1, created.day).toISOString(),
+        description: created.year ? `Since ${created.year} · ${yr - created.year} years` : null,
+        color:       null,
+      };
+      setEvents(prev => [...prev, calEvent]);
       router.refresh();
     }
-  }, [router]);
+  }, [router, todayDate]);
 
   const calendarEl = (
     <CircularCalendar
@@ -74,7 +82,7 @@ export default function DashboardClient({
       todayInfo={todayInfo}
       selectedEvent={selectedEvent}
       isLoggedIn={isLoggedIn}
-      onAddEvent={handleAddEvent}
+      onAddDate={handleAddDate}
       onClearSelection={handleClearSelection}
       userBirthInfo={userBirthInfo}
     />

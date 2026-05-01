@@ -10,12 +10,14 @@ interface TodayPanelProps {
   todayInfo: TodayInfo;
   selectedEvent: CalendarEvent | null;
   isLoggedIn: boolean;
-  onAddEvent?: (data: { title: string; date: string; description: string }) => Promise<void>;
+  onAddDate?: (data: { label: string; month: number; day: number; year: number | null }) => Promise<void>;
   onClearSelection?: () => void;
   userBirthInfo?: UserBirthInfo | null;
 }
 
 const INTER = "'Inter', system-ui, sans-serif";
+
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 // Consistent spacing: 8 / 16 / 24 / 32px
 const S = { xs: '8px', sm: '16px', md: '24px', lg: '32px' } as const;
@@ -53,18 +55,23 @@ function Badge({ element }: { element: string }) {
 }
 
 export default function TodayPanel({
-  today, todayInfo, selectedEvent, isLoggedIn, onAddEvent, onClearSelection, userBirthInfo,
+  today, todayInfo, selectedEvent, isLoggedIn, onAddDate, onClearSelection, userBirthInfo,
 }: TodayPanelProps) {
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ title: '', date: '', description: '' });
+  const [form, setForm] = useState({ label: '', month: today.getMonth() + 1, day: today.getDate(), year: '' });
   const [saving, setSaving] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title || !form.date) return;
+    if (!form.label) return;
     setSaving(true);
-    await onAddEvent?.(form);
-    setForm({ title: '', date: '', description: '' });
+    await onAddDate?.({
+      label: form.label,
+      month: form.month,
+      day:   form.day,
+      year:  form.year ? parseInt(form.year) : null,
+    });
+    setForm({ label: '', month: today.getMonth() + 1, day: today.getDate(), year: '' });
     setShowForm(false);
     setSaving(false);
   };
@@ -205,27 +212,45 @@ export default function TodayPanel({
           ) : (
             <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: S.xs }}>
               <p style={lbl}>New date</p>
-              {(['title', 'date'] as const).map(f => (
-                <input key={f}
-                  type={f === 'date' ? 'date' : 'text'}
-                  placeholder={f === 'title' ? 'Title' : undefined}
-                  value={form[f]} required
-                  onChange={e => setForm(p => ({ ...p, [f]: e.target.value }))}
-                  style={{
-                    width: '100%', fontSize: '13px', border: '1px solid var(--border)',
-                    borderRadius: '5px', padding: `${S.xs} 10px`, background: 'transparent',
-                    color: 'var(--ink)', fontFamily: INTER, outline: 'none',
-                  }}
-                />
-              ))}
-              <textarea placeholder="Notes (optional)" rows={2} value={form.description}
-                onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+              <input
+                type="text" required placeholder="Label (e.g. Anniversary)"
+                value={form.label}
+                onChange={e => setForm(p => ({ ...p, label: e.target.value }))}
                 style={{
                   width: '100%', fontSize: '13px', border: '1px solid var(--border)',
                   borderRadius: '5px', padding: `${S.xs} 10px`, background: 'transparent',
-                  color: 'var(--ink)', fontFamily: INTER, outline: 'none', resize: 'none',
+                  color: 'var(--ink)', fontFamily: INTER, outline: 'none', boxSizing: 'border-box',
                 }}
               />
+              <div style={{ display: 'flex', gap: S.xs }}>
+                <select value={form.month} onChange={e => setForm(p => ({ ...p, month: parseInt(e.target.value) }))}
+                  style={{
+                    flex: 1, fontSize: '13px', border: '1px solid var(--border)',
+                    borderRadius: '5px', padding: `${S.xs} 8px`, background: 'transparent',
+                    color: 'var(--ink)', fontFamily: INTER, outline: 'none', appearance: 'none',
+                  }}>
+                  {MONTH_NAMES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+                </select>
+                <select value={form.day} onChange={e => setForm(p => ({ ...p, day: parseInt(e.target.value) }))}
+                  style={{
+                    flex: 1, fontSize: '13px', border: '1px solid var(--border)',
+                    borderRadius: '5px', padding: `${S.xs} 8px`, background: 'transparent',
+                    color: 'var(--ink)', fontFamily: INTER, outline: 'none', appearance: 'none',
+                  }}>
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+                <input type="number" placeholder="Year" min={1900} max={2100}
+                  value={form.year}
+                  onChange={e => setForm(p => ({ ...p, year: e.target.value }))}
+                  style={{
+                    flex: 1, fontSize: '13px', border: '1px solid var(--border)',
+                    borderRadius: '5px', padding: `${S.xs} 8px`, background: 'transparent',
+                    color: 'var(--ink)', fontFamily: INTER, outline: 'none',
+                  }}
+                />
+              </div>
               <div style={{ display: 'flex', gap: S.xs }}>
                 <button type="submit" disabled={saving} style={{
                   flex: 1, fontSize: '13px', fontWeight: 500,
