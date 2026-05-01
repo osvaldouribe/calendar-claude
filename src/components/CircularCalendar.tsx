@@ -226,6 +226,8 @@ export default function CircularCalendar({
       }),
   [fullMoons, year, daysInYear, pos, move, clear]);
 
+  const EVENT_COLOR = ELEMENT_COLOR.water; // #6B50A8 — palette purple
+
   const renderEvents = useCallback(() =>
     events.map((ev) => {
       const d = new Date(ev.date);
@@ -233,19 +235,18 @@ export default function CircularCalendar({
       const a = dayToAngle(getDayOfYear(d), daysInYear);
       const p = polar(R.eventRing, a);
       const active = selectedEventId === ev.id;
-      const color = ev.color ?? '#6B7280';
       return (
         <g key={ev.id} style={{ cursor: 'pointer' }} onClick={() => onEventClick?.(ev)}>
-          {active && <circle cx={p.x} cy={p.y} r={9} fill={color} opacity="0.18" />}
-          <circle cx={p.x} cy={p.y} r={active ? 5 : 3.5}
-            fill={color} stroke={CREAM} strokeWidth="1.5"
+          {active && <circle cx={p.x} cy={p.y} r={10} fill={EVENT_COLOR} opacity="0.15" />}
+          <circle cx={p.x} cy={p.y} r={active ? 5.5 : 4}
+            fill={EVENT_COLOR} stroke={CREAM} strokeWidth="1.5"
             style={{ transition: 'r 0.15s' }}>
             <title>{ev.title}</title>
           </circle>
         </g>
       );
     }),
-  [events, year, daysInYear, selectedEventId, onEventClick]);
+  [events, year, daysInYear, selectedEventId, onEventClick, EVENT_COLOR]);
 
   const renderToday = useCallback(() => {
     const tip_ = polar(R.outer, todayAngle);
