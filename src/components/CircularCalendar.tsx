@@ -2,7 +2,7 @@
 
 import React, { useCallback, useState, useRef } from 'react';
 import type { ZodiacSign, FullMoon } from '@/lib/cosmic-data';
-import { getDayOfYear, getDaysInYear } from '@/lib/cosmic-data';
+import { getDayOfYear, getDaysInYear, getZodiacForDay } from '@/lib/cosmic-data';
 
 export interface CalendarEvent {
   id: string;
@@ -236,12 +236,14 @@ export default function CircularCalendar({
       const p = polar(R.eventRing, a);
       const active = selectedEventId === ev.id;
       const dateStr = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+      const sign = getZodiacForDay(getDayOfYear(d));
       return (
         <g key={ev.id} style={{ cursor: 'pointer' }}
           onClick={() => onEventClick?.(ev)}
           onMouseEnter={(e) => setTip({
             ...pos(e),
             title: ev.title,
+            meta: `${sign.symbol} ${sign.name} · ${sign.element}`,
             rows: [{ label: 'Date', value: dateStr }],
             note: ev.description ?? undefined,
           })}

@@ -241,6 +241,10 @@ export interface UserBirthInfo {
   personalNote:    string; // birth element × current element
 }
 
+export function getPersonalNote(birthElement: Element, seasonElement: Element): string {
+  return ELEMENT_INTERACTIONS[birthElement][seasonElement];
+}
+
 export function getUserBirthInfo(birthDate: Date, currentElement: Element): UserBirthInfo {
   const doy          = getDayOfYear(birthDate);
   const westernSign  = getZodiacForDay(doy);

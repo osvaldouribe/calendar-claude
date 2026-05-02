@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import type { TodayInfo, UserBirthInfo } from '@/lib/cosmic-data';
-import { ELEMENT_COLORS } from '@/lib/cosmic-data';
+import React, { useState, useMemo } from 'react';
+import type { TodayInfo, UserBirthInfo, Element } from '@/lib/cosmic-data';
+import { ELEMENT_COLORS, getTodayInfo, getPersonalNote } from '@/lib/cosmic-data';
 import type { CalendarEvent } from './CircularCalendar';
 
 interface TodayPanelProps {
@@ -54,6 +54,57 @@ function Badge({ element }: { element: string }) {
   );
 }
 
+function CosmicSnapshot({ month, day, birthElement }: {
+  month: number; day: number; birthElement?: Element | null;
+}) {
+  const info = useMemo(() => {
+    const now = new Date();
+    const thisYear = new Date(now.getFullYear(), month - 1, day);
+    const date = thisYear >= now ? thisYear : new Date(now.getFullYear() + 1, month - 1, day);
+    return getTodayInfo(date);
+  }, [month, day]);
+
+  const personalNote = useMemo(
+    () => birthElement ? getPersonalNote(birthElement, info.element) : null,
+    [birthElement, info.element]
+  );
+
+  return (
+    <div style={{
+      background: 'var(--bg-cream)', borderRadius: '8px',
+      padding: '12px', border: '1px solid var(--border)',
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ fontSize: '16px', lineHeight: 1 }}>{info.zodiac.symbol}</span>
+          <span style={{ fontFamily: INTER, fontSize: '13px', fontWeight: 500, color: 'var(--ink)' }}>
+            {info.zodiac.name}
+          </span>
+        </div>
+        <Badge element={info.element} />
+      </div>
+      <div style={{ borderTop: '1px solid var(--border)' }}>
+        <Row label="Planet" value={info.planet} />
+        <Row label="Tarot"  value={info.tarot} />
+        <Row label="Season" value={info.season} />
+      </div>
+      <p style={{
+        fontFamily: INTER, fontSize: '11px', color: 'var(--ink-mid)',
+        lineHeight: 1.55, margin: '8px 0 0', fontStyle: 'italic',
+      }}>
+        {info.energyDescription}
+      </p>
+      {personalNote && (
+        <div style={{ borderTop: '1px solid var(--border)', marginTop: '8px', paddingTop: '8px' }}>
+          <p style={{ fontFamily: INTER, fontSize: '11px', color: 'var(--ink-light)', lineHeight: 1.55, margin: 0 }}>
+            {personalNote}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function TodayPanel({
   today, todayInfo, selectedEvent, isLoggedIn, onAddDate, onClearSelection, userBirthInfo,
 }: TodayPanelProps) {
@@ -78,6 +129,7 @@ export default function TodayPanel({
 
   // ── selected event view ───────────────────────────────────────────────────
   if (selectedEvent) {
+    const evDate = new Date(selectedEvent.date);
     return (
       <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: S.md }}>
         <button onClick={onClearSelection} style={{
@@ -89,14 +141,18 @@ export default function TodayPanel({
         </button>
         <div style={{ width: '24px', height: '2px', borderRadius: '1px',
           backgroundColor: selectedEvent.color ?? '#9C9792', marginBottom: S.sm }} />
-        <p style={{ ...lbl, marginBottom: S.xs }}>Event</p>
+        <p style={{ ...lbl, marginBottom: S.xs }}>
+          {evDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+        </p>
         <h2 style={{ fontFamily: INTER, fontSize: '18px', fontWeight: 500,
-          color: 'var(--ink)', lineHeight: 1.3, margin: `0 0 ${S.xs}` }}>
+          color: 'var(--ink)', lineHeight: 1.3, margin: `0 0 ${S.md}` }}>
           {selectedEvent.title}
         </h2>
-        <p style={lbl}>
-          {new Date(selectedEvent.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-        </p>
+        <CosmicSnapshot
+          month={evDate.getMonth() + 1}
+          day={evDate.getDate()}
+          birthElement={userBirthInfo?.westernSign.element ?? null}
+        />
         {selectedEvent.description && (
           <>{HR}
           <p style={{ fontFamily: INTER, fontSize: '13px', color: 'var(--ink-mid)', lineHeight: 1.6 }}>
@@ -251,6 +307,11 @@ export default function TodayPanel({
                   }}
                 />
               </div>
+              <CosmicSnapshot
+                month={form.month}
+                day={form.day}
+                birthElement={userBirthInfo?.westernSign.element ?? null}
+              />
               <div style={{ display: 'flex', gap: S.xs }}>
                 <button type="submit" disabled={saving} style={{
                   flex: 1, fontSize: '13px', fontWeight: 500,
