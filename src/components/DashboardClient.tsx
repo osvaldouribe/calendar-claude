@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import CircularCalendar, { type CalendarEvent } from './CircularCalendar';
+import CircularCalendar, { type CalendarEvent, type GoalEvent } from './CircularCalendar';
 import TodayPanel from './TodayPanel';
 import type { TodayInfo, ZodiacSign, FullMoon, UserBirthInfo } from '@/lib/cosmic-data';
 
@@ -11,6 +11,7 @@ interface Props {
   today: string;
   todayInfo: TodayInfo;
   events: CalendarEvent[];
+  goals: GoalEvent[];
   zodiacSigns: ZodiacSign[];
   fullMoons: FullMoon[];
   isLoggedIn: boolean;
@@ -22,22 +23,32 @@ interface Props {
 const INTER = "'Inter', system-ui, sans-serif";
 
 export default function DashboardClient({
-  today, todayInfo, events: initialEvents,
+  today, todayInfo, events: initialEvents, goals: initialGoals,
   zodiacSigns, fullMoons, isLoggedIn, userEmail, userName, userBirthInfo,
 }: Props) {
   const router = useRouter();
   const todayDate = new Date(today);
-  const [events, setEvents] = useState<CalendarEvent[]>(initialEvents);
+  const [events, setEvents]               = useState<CalendarEvent[]>(initialEvents);
+  const [goals, setGoals]                 = useState<GoalEvent[]>(initialGoals);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [selectedGoal, setSelectedGoal]   = useState<GoalEvent | null>(null);
+  const [sheetOpen, setSheetOpen]         = useState(false);
 
   const handleEventClick = useCallback((event: CalendarEvent) => {
     setSelectedEvent(event);
+    setSelectedGoal(null);
+    setSheetOpen(true);
+  }, []);
+
+  const handleGoalClick = useCallback((goal: GoalEvent) => {
+    setSelectedGoal(goal);
+    setSelectedEvent(null);
     setSheetOpen(true);
   }, []);
 
   const handleClearSelection = useCallback(() => {
     setSelectedEvent(null);
+    setSelectedGoal(null);
     setSheetOpen(false);
   }, []);
 
@@ -52,26 +63,51 @@ export default function DashboardClient({
     if (res.ok) {
       const created = await res.json();
       const yr = todayDate.getFullYear();
-      const calEvent = {
+      setEvents(prev => [...prev, {
         id:          created.id,
         title:       created.label,
         date:        new Date(yr, created.month - 1, created.day).toISOString(),
         description: created.year ? `Since ${created.year} · ${yr - created.year} years` : null,
         color:       null,
-      };
-      setEvents(prev => [...prev, calEvent]);
+      }]);
       router.refresh();
     }
   }, [router, todayDate]);
+
+  const handleAddGoal = useCallback(async (data: {
+    title: string; description: string | null;
+    targetMonth: number; targetDay: number; targetYear: number;
+  }) => {
+    const res = await fetch('/api/goals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) {
+      const created = await res.json();
+      setGoals(prev => [...prev, {
+        id:          created.id,
+        title:       created.title,
+        targetMonth: created.targetMonth,
+        targetDay:   created.targetDay,
+        targetYear:  created.targetYear,
+        description: created.description,
+      }]);
+      router.refresh();
+    }
+  }, [router]);
 
   const calendarEl = (
     <CircularCalendar
       today={todayDate}
       events={events}
+      goals={goals}
       fullMoons={fullMoons}
       zodiacSigns={zodiacSigns}
       selectedEventId={selectedEvent?.id ?? null}
+      selectedGoalId={selectedGoal?.id ?? null}
       onEventClick={handleEventClick}
+      onGoalClick={handleGoalClick}
       onTodayClick={handleClearSelection}
     />
   );
@@ -81,8 +117,11 @@ export default function DashboardClient({
       today={todayDate}
       todayInfo={todayInfo}
       selectedEvent={selectedEvent}
+      selectedGoal={selectedGoal}
       isLoggedIn={isLoggedIn}
+      goals={goals}
       onAddDate={handleAddDate}
+      onAddGoal={handleAddGoal}
       onClearSelection={handleClearSelection}
       userBirthInfo={userBirthInfo}
     />
@@ -110,14 +149,12 @@ export default function DashboardClient({
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           {isLoggedIn ? (
-            <>
-              <Link href="/profile" style={{
-                fontSize: '12px',
-                color: 'var(--ink-light)', textDecoration: 'none', fontFamily: INTER,
-              }}>
-                {userName || userEmail}
-              </Link>
-            </>
+            <Link href="/profile" style={{
+              fontSize: '12px',
+              color: 'var(--ink-light)', textDecoration: 'none', fontFamily: INTER,
+            }}>
+              {userName || userEmail}
+            </Link>
           ) : (
             <>
               <Link href="/login" style={{
@@ -137,7 +174,7 @@ export default function DashboardClient({
         </div>
       </nav>
 
-      {/* ── DESKTOP layout (CSS class, always in stylesheet) ── */}
+      {/* ── DESKTOP layout ── */}
       <div className="layout-desktop">
         <main style={{
           overflow: 'hidden', display: 'flex',
@@ -158,14 +195,12 @@ export default function DashboardClient({
         </aside>
       </div>
 
-      {/* ── MOBILE layout (CSS class, always in stylesheet) ── */}
+      {/* ── MOBILE layout ── */}
       <div className="layout-mobile">
-        {/* Calendar fills available height */}
         <div style={{ flex: 1, minHeight: 0, padding: '0.5rem', overflow: 'hidden' }}>
           {calendarEl}
         </div>
 
-        {/* Bottom sheet */}
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0,
           background: '#fff',
@@ -178,7 +213,6 @@ export default function DashboardClient({
           display: 'flex', flexDirection: 'column',
           zIndex: 10,
         }}>
-          {/* Drag handle — always visible */}
           <button
             onClick={() => setSheetOpen(o => !o)}
             style={{

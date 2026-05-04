@@ -18,15 +18,23 @@ export default async function HomePage() {
     id: string; title: string; date: string;
     description: string | null; color: string | null;
   }> = [];
+  let goals: Array<{
+    id: string; title: string; description: string | null;
+    targetMonth: number; targetDay: number; targetYear: number;
+  }> = [];
 
   if (session?.user?.id) {
-    const [rawEvents, profile, importantDates] = await Promise.all([
+    const [rawEvents, profile, importantDates, rawGoals] = await Promise.all([
       prisma.event.findMany({ where: { userId: session.user.id }, orderBy: { date: 'asc' } }),
       prisma.profile.findUnique({
         where:  { userId: session.user.id },
         select: { hemisphere: true, birthDate: true, name: true },
       }),
       prisma.importantDate.findMany({ where: { userId: session.user.id } }),
+      prisma.goal.findMany({
+        where:   { userId: session.user.id },
+        orderBy: [{ targetYear: 'asc' }, { targetMonth: 'asc' }, { targetDay: 'asc' }],
+      }),
     ]);
 
     if (profile?.hemisphere === 'south') hemisphere = 'south';
@@ -62,6 +70,15 @@ export default async function HomePage() {
         color:       null,
       });
     }
+
+    goals = rawGoals.map(g => ({
+      id:          g.id,
+      title:       g.title,
+      description: g.description,
+      targetMonth: g.targetMonth,
+      targetDay:   g.targetDay,
+      targetYear:  g.targetYear,
+    }));
   }
 
   const todayInfo = getTodayInfo(today, hemisphere);
@@ -74,6 +91,7 @@ export default async function HomePage() {
       today={today.toISOString()}
       todayInfo={todayInfo}
       events={events}
+      goals={goals}
       zodiacSigns={ZODIAC_SIGNS}
       fullMoons={FULL_MOONS}
       isLoggedIn={!!session?.user}

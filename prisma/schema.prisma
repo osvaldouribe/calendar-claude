@@ -57,6 +57,7 @@ model User {
   events         Event[]
   profile        Profile?
   importantDates ImportantDate[]
+  goals          Goal[]
 }
 
 model Event {
@@ -101,4 +102,21 @@ model ImportantDate {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model Goal {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  targetMonth Int
+  targetDay   Int
+  targetYear  Int
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([targetYear])
 }

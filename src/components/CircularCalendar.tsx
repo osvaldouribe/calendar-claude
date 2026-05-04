@@ -12,13 +12,25 @@ export interface CalendarEvent {
   color?: string | null;
 }
 
+export interface GoalEvent {
+  id: string;
+  title: string;
+  targetMonth: number;
+  targetDay: number;
+  targetYear: number;
+  description?: string | null;
+}
+
 export interface CircularCalendarProps {
   today: Date;
   events: CalendarEvent[];
+  goals?: GoalEvent[];
   fullMoons: FullMoon[];
   zodiacSigns: ZodiacSign[];
   selectedEventId?: string | null;
+  selectedGoalId?: string | null;
   onEventClick?: (event: CalendarEvent) => void;
+  onGoalClick?: (goal: GoalEvent) => void;
   onTodayClick?: () => void;
 }
 
@@ -31,7 +43,8 @@ const R = {
   zodiacOuter: 238,   // zodiac band outer edge (for fills + hit area)
   zodiacInner: 208,   // zodiac band inner edge
   moonDot:     255,   // full moon circles sit on the outer ring
-  eventRing:   180,
+  goalRing:    195,   // goal diamonds — aspirational layer
+  eventRing:   180,   // event circles — personal/occurrence layer
   inner:        76,   // cream center disc
 } as const;
 
@@ -84,6 +97,7 @@ const ELEMENT_FILL: Record<string, string> = {
 };
 
 const MOON_COLOR = '#4CA8C8';
+const GOAL_COLOR = '#D4A843';
 const CREAM      = '#F7F5F0';
 const INK        = '#1C1917';
 const INK_MID    = '#6B6560';
@@ -107,8 +121,8 @@ interface Tip {
 
 // ── component ─────────────────────────────────────────────────────────────────
 export default function CircularCalendar({
-  today, events, fullMoons, zodiacSigns,
-  selectedEventId, onEventClick, onTodayClick,
+  today, events, goals = [], fullMoons, zodiacSigns,
+  selectedEventId, selectedGoalId, onEventClick, onGoalClick, onTodayClick,
 }: CircularCalendarProps) {
   const year       = today.getFullYear();
   const daysInYear = getDaysInYear(year);
@@ -259,6 +273,46 @@ export default function CircularCalendar({
     }),
   [events, year, daysInYear, selectedEventId, onEventClick, EVENT_COLOR, pos, move, clear]);
 
+  const renderGoals = useCallback(() =>
+    goals.map((goal) => {
+      if (goal.targetYear !== year) return null;
+      const d = new Date(goal.targetYear, goal.targetMonth - 1, goal.targetDay);
+      const a = dayToAngle(getDayOfYear(d), daysInYear);
+      const p = polar(R.goalRing, a);
+      const active = selectedGoalId === goal.id;
+      const dateStr = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      const half = active ? 5.5 : 4;
+      return (
+        <g key={goal.id} style={{ cursor: 'pointer' }}
+          onClick={() => onGoalClick?.(goal)}
+          onMouseEnter={(e) => setTip({
+            ...pos(e),
+            title: goal.title,
+            meta: `◆ Goal · ${dateStr}`,
+            rows: [],
+            note: goal.description ?? undefined,
+          })}
+          onMouseMove={move}
+          onMouseLeave={clear}
+        >
+          {active && (
+            <rect
+              x={p.x - 9} y={p.y - 9} width={18} height={18}
+              transform={`rotate(45, ${p.x}, ${p.y})`}
+              fill={GOAL_COLOR} opacity={0.18} stroke="none"
+            />
+          )}
+          <rect
+            x={p.x - half} y={p.y - half} width={half * 2} height={half * 2}
+            transform={`rotate(45, ${p.x}, ${p.y})`}
+            fill={GOAL_COLOR} stroke={CREAM} strokeWidth="1.5"
+            style={{ transition: 'all 0.15s' }}
+          />
+        </g>
+      );
+    }),
+  [goals, year, daysInYear, selectedGoalId, onGoalClick, pos, move, clear]);
+
   const renderToday = useCallback(() => {
     const tip_ = polar(R.outer, todayAngle);
     const base = polar(R.inner + 8, todayAngle);
@@ -300,6 +354,10 @@ export default function CircularCalendar({
         <circle cx={CX} cy={CY} r={R.zodiacInner}
           fill="none" stroke="hsl(35,10%,88%)" strokeWidth="0.5" />
 
+        {/* Goal dashed ring */}
+        <circle cx={CX} cy={CY} r={R.goalRing}
+          fill="none" stroke="hsl(43,50%,88%)" strokeWidth="0.4" strokeDasharray="2 5" />
+
         {/* Event dashed ring */}
         <circle cx={CX} cy={CY} r={R.eventRing}
           fill="none" stroke="hsl(215,10%,90%)" strokeWidth="0.4" strokeDasharray="2 5" />
@@ -307,6 +365,7 @@ export default function CircularCalendar({
         {renderMonths()}
         {renderMoons()}
         {renderEvents()}
+        {renderGoals()}
         {renderToday()}
       </svg>
 

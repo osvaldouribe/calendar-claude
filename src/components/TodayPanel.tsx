@@ -3,31 +3,55 @@
 import React, { useState, useMemo } from 'react';
 import type { TodayInfo, UserBirthInfo, Element } from '@/lib/cosmic-data';
 import { ELEMENT_COLORS, getTodayInfo, getPersonalNote } from '@/lib/cosmic-data';
-import type { CalendarEvent } from './CircularCalendar';
+import type { CalendarEvent, GoalEvent } from './CircularCalendar';
 
+// ── entry type registry — add new types here only ────────────────────────────
+const ENTRY_TYPES = [
+  { key: 'reminder' as const, label: 'Reminder' },
+  { key: 'goal'     as const, label: 'Goal'     },
+] satisfies { key: string; label: string }[];
+
+type EntryType = typeof ENTRY_TYPES[number]['key'];
+
+// ── goal energy alignment ────────────────────────────────────────────────────
+const GOAL_ENERGY: Record<string, string> = {
+  fire:  'initiation — act before you feel ready',
+  earth: 'discipline — small consistent steps compound',
+  air:   'clarity — write it down, refine the plan',
+  water: 'intention — reconnect with why it matters',
+};
+
+function daysUntil(month: number, day: number, year: number): number {
+  const target = new Date(year, month - 1, day);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+// ── props ─────────────────────────────────────────────────────────────────────
 interface TodayPanelProps {
   today: Date;
   todayInfo: TodayInfo;
   selectedEvent: CalendarEvent | null;
+  selectedGoal: GoalEvent | null;
   isLoggedIn: boolean;
+  goals?: GoalEvent[];
   onAddDate?: (data: { label: string; month: number; day: number; year: number | null }) => Promise<void>;
+  onAddGoal?: (data: { title: string; description: string | null; targetMonth: number; targetDay: number; targetYear: number }) => Promise<void>;
   onClearSelection?: () => void;
   userBirthInfo?: UserBirthInfo | null;
 }
 
 const INTER = "'Inter', system-ui, sans-serif";
-
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const GOAL_COLOR = '#D4A843';
 
-// Consistent spacing: 8 / 16 / 24 / 32px
 const S = { xs: '8px', sm: '16px', md: '24px', lg: '32px' } as const;
 
-// Label: small, muted — no caps, no tracking
 const lbl: React.CSSProperties = {
   fontFamily: INTER, fontSize: '11px', color: 'var(--ink-light)',
 };
 
-// Thin horizontal rule
 const HR = <div style={{ height: '1px', background: 'var(--border)', margin: `${S.md} 0` }} />;
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -51,6 +75,14 @@ function Badge({ element }: { element: string }) {
       <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: c.dot, flexShrink: 0 }} />
       {element.charAt(0).toUpperCase() + element.slice(1)}
     </span>
+  );
+}
+
+function DiamondIcon({ size = 9, color = GOAL_COLOR }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 10 10" style={{ flexShrink: 0 }}>
+      <rect x="1" y="1" width="8" height="8" fill={color} transform="rotate(45 5 5)" rx="0.5" />
+    </svg>
   );
 }
 
@@ -105,27 +137,130 @@ function CosmicSnapshot({ month, day, birthElement }: {
   );
 }
 
-export default function TodayPanel({
-  today, todayInfo, selectedEvent, isLoggedIn, onAddDate, onClearSelection, userBirthInfo,
-}: TodayPanelProps) {
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ label: '', month: today.getMonth() + 1, day: today.getDate(), year: '' });
-  const [saving, setSaving] = useState(false);
+// ── shared input style ────────────────────────────────────────────────────────
+const inputStyle: React.CSSProperties = {
+  width: '100%', fontSize: '13px', border: '1px solid var(--border)',
+  borderRadius: '5px', padding: `${S.xs} 10px`, background: 'transparent',
+  color: 'var(--ink)', fontFamily: INTER, outline: 'none', boxSizing: 'border-box',
+};
+const selectStyle: React.CSSProperties = {
+  flex: 1, fontSize: '13px', border: '1px solid var(--border)',
+  borderRadius: '5px', padding: `${S.xs} 8px`, background: 'transparent',
+  color: 'var(--ink)', fontFamily: INTER, outline: 'none', appearance: 'none' as const,
+};
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.label) return;
-    setSaving(true);
-    await onAddDate?.({
-      label: form.label,
-      month: form.month,
-      day:   form.day,
-      year:  form.year ? parseInt(form.year) : null,
-    });
-    setForm({ label: '', month: today.getMonth() + 1, day: today.getDate(), year: '' });
-    setShowForm(false);
+// ── main component ────────────────────────────────────────────────────────────
+export default function TodayPanel({
+  today, todayInfo, selectedEvent, selectedGoal,
+  isLoggedIn, goals = [], onAddDate, onAddGoal, onClearSelection, userBirthInfo,
+}: TodayPanelProps) {
+  const [entryType, setEntryType]   = useState<EntryType | null>(null);
+  const [saving, setSaving]         = useState(false);
+
+  const [reminderForm, setReminderForm] = useState({
+    label: '', month: today.getMonth() + 1, day: today.getDate(), year: '',
+  });
+  const [goalForm, setGoalForm] = useState({
+    title: '', description: '',
+    month: today.getMonth() + 1, day: today.getDate(), year: String(today.getFullYear()),
+  });
+
+  const resetForms = () => {
+    setReminderForm({ label: '', month: today.getMonth() + 1, day: today.getDate(), year: '' });
+    setGoalForm({ title: '', description: '', month: today.getMonth() + 1, day: today.getDate(), year: String(today.getFullYear()) });
+    setEntryType(null);
     setSaving(false);
   };
+
+  const submitReminder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reminderForm.label) return;
+    setSaving(true);
+    await onAddDate?.({
+      label: reminderForm.label,
+      month: reminderForm.month,
+      day:   reminderForm.day,
+      year:  reminderForm.year ? parseInt(reminderForm.year) : null,
+    });
+    resetForms();
+  };
+
+  const submitGoal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!goalForm.title || !goalForm.year) return;
+    setSaving(true);
+    await onAddGoal?.({
+      title:       goalForm.title,
+      description: goalForm.description || null,
+      targetMonth: goalForm.month,
+      targetDay:   goalForm.day,
+      targetYear:  parseInt(goalForm.year),
+    });
+    resetForms();
+  };
+
+  const { zodiac, element, planet, tarot, energyDescription, season, nextFullMoon } = todayInfo;
+  const currentYearGoals = goals
+    .filter(g => g.targetYear === today.getFullYear())
+    .sort((a, b) => (a.targetMonth * 31 + a.targetDay) - (b.targetMonth * 31 + b.targetDay));
+
+  // ── selected goal view ────────────────────────────────────────────────────
+  if (selectedGoal) {
+    const deadline = new Date(selectedGoal.targetYear, selectedGoal.targetMonth - 1, selectedGoal.targetDay);
+    const days = daysUntil(selectedGoal.targetMonth, selectedGoal.targetDay, selectedGoal.targetYear);
+    const deadlineStr = deadline.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    const daysLabel = days > 0 ? `${days} days remaining` : days === 0 ? 'Due today' : 'Deadline passed';
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: S.md }}>
+        <button onClick={onClearSelection} style={{
+          fontFamily: INTER, fontSize: '13px', color: 'var(--ink-light)',
+          background: 'none', border: 'none', cursor: 'pointer',
+          padding: 0, textAlign: 'left', marginBottom: S.md,
+        }}>
+          ← Today
+        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: S.sm }}>
+          <DiamondIcon />
+          <span style={lbl}>Goal</span>
+        </div>
+        <p style={{ ...lbl, marginBottom: S.xs }}>{deadlineStr}</p>
+        <h2 style={{
+          fontFamily: INTER, fontSize: '18px', fontWeight: 500,
+          color: 'var(--ink)', lineHeight: 1.3, margin: `0 0 ${S.xs}`,
+        }}>
+          {selectedGoal.title}
+        </h2>
+        <p style={{
+          fontFamily: INTER, fontSize: '12px',
+          color: days <= 30 && days >= 0 ? GOAL_COLOR : 'var(--ink-light)',
+          margin: `0 0 ${S.md}`,
+        }}>
+          {daysLabel}
+        </p>
+        <CosmicSnapshot
+          month={selectedGoal.targetMonth}
+          day={selectedGoal.targetDay}
+          birthElement={userBirthInfo?.westernSign.element ?? null}
+        />
+        {HR}
+        <p style={{ ...lbl, marginBottom: S.xs }}>Energy today</p>
+        <p style={{
+          fontFamily: INTER, fontSize: '13px', color: 'var(--ink-mid)',
+          lineHeight: 1.6, fontStyle: 'italic', margin: 0,
+        }}>
+          {element.charAt(0).toUpperCase() + element.slice(1)} energy favors {GOAL_ENERGY[element] ?? 'focus and intention'}. Use it.
+        </p>
+        {selectedGoal.description && (
+          <>{HR}
+          <p style={{ fontFamily: INTER, fontSize: '13px', color: 'var(--ink-mid)', lineHeight: 1.6 }}>
+            {selectedGoal.description}
+          </p></>
+        )}
+        <div style={{ marginTop: 'auto', paddingTop: S.lg }}><Attribution /></div>
+      </div>
+    );
+  }
 
   // ── selected event view ───────────────────────────────────────────────────
   if (selectedEvent) {
@@ -165,8 +300,6 @@ export default function TodayPanel({
   }
 
   // ── today view ────────────────────────────────────────────────────────────
-  const { zodiac, element, planet, tarot, energyDescription, season, nextFullMoon } = todayInfo;
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: S.md }}>
 
@@ -254,82 +387,144 @@ export default function TodayPanel({
         </div>
       </div>
 
-      {/* Add event */}
+      {/* Goals this year */}
+      {isLoggedIn && currentYearGoals.length > 0 && (
+        <>
+          {HR}
+          <p style={{ ...lbl, marginBottom: S.xs }}>
+            Goals · {today.getFullYear()}
+          </p>
+          <p style={{
+            fontFamily: INTER, fontSize: '12px', fontStyle: 'italic',
+            color: 'var(--ink-light)', lineHeight: 1.5, margin: `0 0 ${S.sm}`,
+          }}>
+            {element.charAt(0).toUpperCase() + element.slice(1)} energy favors {GOAL_ENERGY[element] ?? 'focus and intention'}.
+          </p>
+          {currentYearGoals.map(goal => {
+            const days = daysUntil(goal.targetMonth, goal.targetDay, goal.targetYear);
+            const urgent = days >= 0 && days <= 30;
+            return (
+              <div key={goal.id} style={{
+                display: 'flex', justifyContent: 'space-between',
+                alignItems: 'center', padding: `6px 0`,
+                borderBottom: '1px solid var(--border)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                  <DiamondIcon size={7} color={urgent ? GOAL_COLOR : 'var(--ink-light)'} />
+                  <span style={{ fontFamily: INTER, fontSize: '13px', color: 'var(--ink)' }}>
+                    {goal.title}
+                  </span>
+                </div>
+                <span style={{
+                  fontFamily: INTER, fontSize: '11px',
+                  color: urgent ? GOAL_COLOR : 'var(--ink-light)',
+                  flexShrink: 0, marginLeft: '8px',
+                }}>
+                  {days > 0 ? `${days}d` : days === 0 ? 'today' : 'past'}
+                </span>
+              </div>
+            );
+          })}
+        </>
+      )}
+
+      {/* Unified entry */}
       {isLoggedIn && (
         <div style={{ marginTop: S.md }}>
-          {!showForm ? (
-            <button onClick={() => setShowForm(true)} style={{
+          {entryType === null ? (
+            <button onClick={() => setEntryType('reminder')} style={{
               width: '100%', background: 'none', border: '1px solid var(--border)',
               borderRadius: '6px', padding: '10px', cursor: 'pointer',
               fontFamily: INTER, fontSize: '13px', color: 'var(--ink-light)',
             }}>
-              + Mark a date
+              +
             </button>
           ) : (
-            <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: S.xs }}>
-              <p style={lbl}>New date</p>
-              <input
-                type="text" required placeholder="Label (e.g. Anniversary)"
-                value={form.label}
-                onChange={e => setForm(p => ({ ...p, label: e.target.value }))}
-                style={{
-                  width: '100%', fontSize: '13px', border: '1px solid var(--border)',
-                  borderRadius: '5px', padding: `${S.xs} 10px`, background: 'transparent',
-                  color: 'var(--ink)', fontFamily: INTER, outline: 'none', boxSizing: 'border-box',
-                }}
-              />
-              <div style={{ display: 'flex', gap: S.xs }}>
-                <select value={form.month} onChange={e => setForm(p => ({ ...p, month: parseInt(e.target.value) }))}
-                  style={{
-                    flex: 1, fontSize: '13px', border: '1px solid var(--border)',
-                    borderRadius: '5px', padding: `${S.xs} 8px`, background: 'transparent',
-                    color: 'var(--ink)', fontFamily: INTER, outline: 'none', appearance: 'none',
-                  }}>
-                  {MONTH_NAMES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
-                </select>
-                <select value={form.day} onChange={e => setForm(p => ({ ...p, day: parseInt(e.target.value) }))}
-                  style={{
-                    flex: 1, fontSize: '13px', border: '1px solid var(--border)',
-                    borderRadius: '5px', padding: `${S.xs} 8px`, background: 'transparent',
-                    color: 'var(--ink)', fontFamily: INTER, outline: 'none', appearance: 'none',
-                  }}>
-                  {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
-                <input type="number" placeholder="Year" min={1900} max={2100}
-                  value={form.year}
-                  onChange={e => setForm(p => ({ ...p, year: e.target.value }))}
-                  style={{
-                    flex: 1, fontSize: '13px', border: '1px solid var(--border)',
-                    borderRadius: '5px', padding: `${S.xs} 8px`, background: 'transparent',
-                    color: 'var(--ink)', fontFamily: INTER, outline: 'none',
-                  }}
-                />
+            <div>
+              {/* Editorial type picker */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: S.sm }}>
+                {ENTRY_TYPES.map(({ key, label }, i) => (
+                  <React.Fragment key={key}>
+                    {i > 0 && (
+                      <span style={{ fontFamily: INTER, fontSize: '12px', color: 'var(--ink-light)' }}>·</span>
+                    )}
+                    <button
+                      onClick={() => setEntryType(key)}
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        fontFamily: INTER, fontSize: '12px', padding: 0,
+                        color: entryType === key ? 'var(--ink)' : 'var(--ink-light)',
+                        fontWeight: entryType === key ? 500 : 400,
+                      }}
+                    >
+                      {label}
+                    </button>
+                  </React.Fragment>
+                ))}
               </div>
-              <CosmicSnapshot
-                month={form.month}
-                day={form.day}
-                birthElement={userBirthInfo?.westernSign.element ?? null}
-              />
-              <div style={{ display: 'flex', gap: S.xs }}>
-                <button type="submit" disabled={saving} style={{
-                  flex: 1, fontSize: '13px', fontWeight: 500,
-                  background: 'var(--ink)', color: '#fff', border: 'none',
-                  borderRadius: '5px', padding: '10px', cursor: 'pointer',
-                  fontFamily: INTER, opacity: saving ? 0.5 : 1,
-                }}>
-                  {saving ? 'Saving…' : 'Save'}
-                </button>
-                <button type="button" onClick={() => setShowForm(false)} style={{
-                  padding: '10px 14px', fontSize: '13px', background: 'none',
-                  border: '1px solid var(--border)', borderRadius: '5px',
-                  color: 'var(--ink-light)', cursor: 'pointer', fontFamily: INTER,
-                }}>
-                  Cancel
-                </button>
-              </div>
-            </form>
+
+              {/* Reminder form */}
+              {entryType === 'reminder' && (
+                <form onSubmit={submitReminder} style={{ display: 'flex', flexDirection: 'column', gap: S.xs }}>
+                  <input
+                    type="text" required placeholder="Label (e.g. Anniversary)"
+                    value={reminderForm.label}
+                    onChange={e => setReminderForm(p => ({ ...p, label: e.target.value }))}
+                    style={inputStyle}
+                  />
+                  <div style={{ display: 'flex', gap: S.xs }}>
+                    <select value={reminderForm.month} onChange={e => setReminderForm(p => ({ ...p, month: parseInt(e.target.value) }))} style={selectStyle}>
+                      {MONTH_NAMES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+                    </select>
+                    <select value={reminderForm.day} onChange={e => setReminderForm(p => ({ ...p, day: parseInt(e.target.value) }))} style={selectStyle}>
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                    <input type="number" placeholder="Year" min={1900} max={2100}
+                      value={reminderForm.year}
+                      onChange={e => setReminderForm(p => ({ ...p, year: e.target.value }))}
+                      style={{ ...selectStyle, flex: 1 }}
+                    />
+                  </div>
+                  <CosmicSnapshot month={reminderForm.month} day={reminderForm.day} birthElement={userBirthInfo?.westernSign.element ?? null} />
+                  <FormActions saving={saving} onCancel={resetForms} />
+                </form>
+              )}
+
+              {/* Goal form */}
+              {entryType === 'goal' && (
+                <form onSubmit={submitGoal} style={{ display: 'flex', flexDirection: 'column', gap: S.xs }}>
+                  <input
+                    type="text" required placeholder="What do you want to achieve?"
+                    value={goalForm.title}
+                    onChange={e => setGoalForm(p => ({ ...p, title: e.target.value }))}
+                    style={inputStyle}
+                  />
+                  <textarea
+                    placeholder="Description (optional)"
+                    value={goalForm.description}
+                    onChange={e => setGoalForm(p => ({ ...p, description: e.target.value }))}
+                    rows={2}
+                    style={{ ...inputStyle, resize: 'none', lineHeight: 1.5 }}
+                  />
+                  <p style={{ ...lbl, marginBottom: 0 }}>Deadline</p>
+                  <div style={{ display: 'flex', gap: S.xs }}>
+                    <select value={goalForm.month} onChange={e => setGoalForm(p => ({ ...p, month: parseInt(e.target.value) }))} style={selectStyle}>
+                      {MONTH_NAMES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+                    </select>
+                    <select value={goalForm.day} onChange={e => setGoalForm(p => ({ ...p, day: parseInt(e.target.value) }))} style={selectStyle}>
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                    <input type="number" required placeholder="Year" min={today.getFullYear()} max={2100}
+                      value={goalForm.year}
+                      onChange={e => setGoalForm(p => ({ ...p, year: e.target.value }))}
+                      style={{ ...selectStyle, flex: 1 }}
+                    />
+                  </div>
+                  <CosmicSnapshot month={goalForm.month} day={goalForm.day} birthElement={userBirthInfo?.westernSign.element ?? null} />
+                  <FormActions saving={saving} onCancel={resetForms} />
+                </form>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -339,10 +534,33 @@ export default function TodayPanel({
   );
 }
 
+function FormActions({ saving, onCancel }: { saving: boolean; onCancel: () => void }) {
+  return (
+    <div style={{ display: 'flex', gap: '8px' }}>
+      <button type="submit" disabled={saving} style={{
+        flex: 1, fontSize: '13px', fontWeight: 500,
+        background: 'var(--ink)', color: '#fff', border: 'none',
+        borderRadius: '5px', padding: '10px', cursor: 'pointer',
+        fontFamily: "'Inter', system-ui, sans-serif", opacity: saving ? 0.5 : 1,
+      }}>
+        {saving ? 'Saving…' : 'Save'}
+      </button>
+      <button type="button" onClick={onCancel} style={{
+        padding: '10px 14px', fontSize: '13px', background: 'none',
+        border: '1px solid var(--border)', borderRadius: '5px',
+        color: 'var(--ink-light)', cursor: 'pointer',
+        fontFamily: "'Inter', system-ui, sans-serif",
+      }}>
+        Cancel
+      </button>
+    </div>
+  );
+}
+
 function Attribution() {
   return (
-    <div style={{ borderTop: '1px solid var(--border)', paddingTop: S.sm }}>
-      <p style={{ fontFamily: INTER, fontSize: '11px', color: 'var(--ink-light)', lineHeight: 1.6, margin: 0 }}>
+    <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+      <p style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: '11px', color: 'var(--ink-light)', lineHeight: 1.6, margin: 0 }}>
         A side project by Osvaldo Uribe<br />
         <a href="https://instagram.com/art.osv" target="_blank" rel="noopener noreferrer"
           style={{ color: 'var(--ink-light)', textDecoration: 'none' }}>
