@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import CircularCalendar, { type CalendarEvent, type GoalEvent } from './CircularCalendar';
 import TodayPanel from './TodayPanel';
 import type { TodayInfo, ZodiacSign, FullMoon, UserBirthInfo } from '@/lib/cosmic-data';
+import { SOLAR_EVENTS } from '@/lib/cosmic-data';
 
 interface Props {
   today: string;
@@ -104,6 +105,8 @@ export default function DashboardClient({
       goals={goals}
       fullMoons={fullMoons}
       zodiacSigns={zodiacSigns}
+      solarEvents={SOLAR_EVENTS}
+      userElement={userBirthInfo?.westernSign.element ?? null}
       selectedEventId={selectedEvent?.id ?? null}
       selectedGoalId={selectedGoal?.id ?? null}
       onEventClick={handleEventClick}

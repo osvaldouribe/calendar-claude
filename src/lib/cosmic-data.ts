@@ -125,6 +125,66 @@ export const FULL_MOONS: FullMoon[] = [
   { name: 'Wolf Moon',       date: '2026-12-23', description: 'Named for howling winter wolves. A time for inner clarity and solitude.' },
 ];
 
+export interface SolarEvent {
+  name: string;
+  month: number;
+  day: number;
+  season: string;
+  description: string;
+  elementAdvice: Record<Element, string>;
+}
+
+export const SOLAR_EVENTS: SolarEvent[] = [
+  {
+    name: 'Spring Equinox',
+    month: 3, day: 20,
+    season: 'Aries Season · Equal day and night',
+    description: 'Day and night meet in perfect balance before light takes the lead. Seeds stir beneath the soil — motion returns, the cycle of renewal begins.',
+    elementAdvice: {
+      fire:  'Your flame finds fresh fuel. The equinox amplifies new beginnings — plant one bold intention now before the momentum passes.',
+      earth: 'The soil of your nature softens and readies. Begin what you\'ve been planning since the dark months. The ground is finally ready.',
+      air:   'New winds carry new ideas. Follow the thought that keeps returning — this season gives it wings and an audience.',
+      water: 'The thaw releases what was held. Honor what rises to the surface now. It has been waiting patiently for the light.',
+    },
+  },
+  {
+    name: 'Summer Solstice',
+    month: 6, day: 21,
+    season: 'Cancer Season · The longest day',
+    description: 'The sun reaches its zenith. Light is at its absolute fullest. A threshold of power, abundance, and radiant energy — then the slow turn begins.',
+    elementAdvice: {
+      fire:  'The solstice amplifies your nature entirely. Lead, create, and shine — but tend to those around you; your brightness can burn as easily as it warms.',
+      earth: 'Peak light nourishes your steady ground. Celebrate what has grown rather than planting more. Harvest first, expand later.',
+      air:   'High summer quickens your mind — ideas flow freely but may scatter. Channel the energy into one focused expression before it disperses.',
+      water: 'Summer\'s warmth stirs your emotional depths. Feelings run unusually close to the surface. Share what is usually kept below.',
+    },
+  },
+  {
+    name: 'Autumn Equinox',
+    month: 9, day: 22,
+    season: 'Libra Season · Equal day and night',
+    description: 'Light and dark meet in equal measure before darkness takes the lead. A sacred threshold of gratitude, harvest, and deliberate release.',
+    elementAdvice: {
+      fire:  'The cooling season asks your fire to gather inward. Preserve your energy for the long arc ahead — this is a time to consolidate, not expand.',
+      earth: 'Your most resonant season. The harvest mirrors your nature: patient, practical, and deeply generative. This moment belongs to you.',
+      air:   'Autumn brings sharp clarity. Decide which ideas deserve to continue into winter — let the rest compost. Not everything should be carried forward.',
+      water: 'The season of letting go aligns precisely with your depth. Release what no longer nourishes. Composting is a sacred and necessary act.',
+    },
+  },
+  {
+    name: 'Winter Solstice',
+    month: 12, day: 21,
+    season: 'Capricorn Season · The longest night',
+    description: 'The darkest point — and the turning. After tonight, light begins its slow return. Stillness holds transformation. The year breathes.',
+    elementAdvice: {
+      fire:  'Winter tests your fire. Tend your inner flame rather than projecting outward. Ask: what truly burns at your core when everything else goes quiet?',
+      earth: 'The resting season honors your deepest nature. Give yourself permission to stop entirely. Even seeds need the full dark of winter.',
+      air:   'Quiet the mind this solstice. Not all thinking is productive — let the stillness carry the insight that busy days cannot hold.',
+      water: 'The longest night is yours. Your depth flourishes in darkness. Sit with what lives below the surface — it has been waiting to be heard.',
+    },
+  },
+];
+
 export const ELEMENT_COLORS: Record<Element, { bg: string; text: string; dot: string }> = {
   fire:  { bg: '#FAEEE6', text: '#A04020', dot: '#C8673A' },
   earth: { bg: '#EAF2E5', text: '#3A6A28', dot: '#6A9B52' },

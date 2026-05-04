@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useState, useRef } from 'react';
-import type { ZodiacSign, FullMoon } from '@/lib/cosmic-data';
+import type { ZodiacSign, FullMoon, SolarEvent, Element } from '@/lib/cosmic-data';
 import { getDayOfYear, getDaysInYear, getZodiacForDay } from '@/lib/cosmic-data';
 
 export interface CalendarEvent {
@@ -27,6 +27,8 @@ export interface CircularCalendarProps {
   goals?: GoalEvent[];
   fullMoons: FullMoon[];
   zodiacSigns: ZodiacSign[];
+  solarEvents?: SolarEvent[];
+  userElement?: Element | null;
   selectedEventId?: string | null;
   selectedGoalId?: string | null;
   onEventClick?: (event: CalendarEvent) => void;
@@ -96,8 +98,9 @@ const ELEMENT_FILL: Record<string, string> = {
   water: 'rgba(107, 80,  168, 0.07)',
 };
 
-const MOON_COLOR = '#4CA8C8';
-const GOAL_COLOR = '#D4A843';
+const MOON_COLOR   = '#4CA8C8';
+const GOAL_COLOR   = '#D4A843';
+const SOLAR_COLOR  = '#E8B84B';
 const CREAM      = '#F7F5F0';
 const INK        = '#1C1917';
 const INK_MID    = '#6B6560';
@@ -121,7 +124,7 @@ interface Tip {
 
 // ── component ─────────────────────────────────────────────────────────────────
 export default function CircularCalendar({
-  today, events, goals = [], fullMoons, zodiacSigns,
+  today, events, goals = [], fullMoons, zodiacSigns, solarEvents = [], userElement,
   selectedEventId, selectedGoalId, onEventClick, onGoalClick, onTodayClick,
 }: CircularCalendarProps) {
   const year       = today.getFullYear();
@@ -313,6 +316,42 @@ export default function CircularCalendar({
     }),
   [goals, year, daysInYear, selectedGoalId, onGoalClick, pos, move, clear]);
 
+  const renderSolarEvents = useCallback(() =>
+    solarEvents.map((event) => {
+      const doy  = getDayOfYear(new Date(year, event.month - 1, event.day));
+      const a    = dayToAngle(doy, daysInYear);
+      const base = polar(R.inner + 8, a);
+      const tip_ = polar(R.outer, a);
+      const dot  = polar(R.outer + 10, a);
+      const advice = userElement ? event.elementAdvice[userElement] : undefined;
+      return (
+        <g key={event.name}
+          onMouseEnter={(e) => setTip({
+            ...pos(e),
+            title: event.name,
+            meta: event.season,
+            rows: [{ label: 'Date', value: `${MONTHS[event.month - 1]} ${event.day}` }],
+            note: advice ?? event.description,
+          })}
+          onMouseMove={move}
+          onMouseLeave={clear}
+          style={{ cursor: 'default' }}
+        >
+          {/* fat invisible hit area */}
+          <line x1={base.x} y1={base.y} x2={tip_.x} y2={tip_.y}
+            stroke="transparent" strokeWidth="14" />
+          {/* dotted radial line */}
+          <line x1={base.x} y1={base.y} x2={tip_.x} y2={tip_.y}
+            stroke={SOLAR_COLOR} strokeWidth="1.2" strokeDasharray="3 4"
+            strokeLinecap="round" opacity="0.75" />
+          {/* small marker just outside the outer ring */}
+          <circle cx={dot.x} cy={dot.y} r={3.5}
+            fill={SOLAR_COLOR} opacity="0.85" />
+        </g>
+      );
+    }),
+  [solarEvents, year, daysInYear, userElement, pos, move, clear]);
+
   const renderToday = useCallback(() => {
     const tip_ = polar(R.outer, todayAngle);
     const base = polar(R.inner + 8, todayAngle);
@@ -366,6 +405,7 @@ export default function CircularCalendar({
         {renderMoons()}
         {renderEvents()}
         {renderGoals()}
+        {renderSolarEvents()}
         {renderToday()}
       </svg>
 
