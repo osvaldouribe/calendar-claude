@@ -469,7 +469,6 @@ export default function TodayPanel({
                       style={{ ...selectStyle, flex: 1 }}
                     />
                   </div>
-                  <CosmicSnapshot month={reminderForm.month} day={reminderForm.day} birthElement={userBirthInfo?.westernSign.element ?? null} />
                   <FormActions saving={saving} onCancel={resetForms} />
                 </form>
               )}
@@ -504,7 +503,6 @@ export default function TodayPanel({
                       style={{ ...selectStyle, flex: 1 }}
                     />
                   </div>
-                  <CosmicSnapshot month={goalForm.month} day={goalForm.day} birthElement={userBirthInfo?.westernSign.element ?? null} />
                   <FormActions saving={saving} onCancel={resetForms} />
                 </form>
               )}
