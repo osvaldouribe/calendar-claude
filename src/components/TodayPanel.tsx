@@ -341,26 +341,10 @@ export default function TodayPanel({
 
       {HR}
 
-      {/* Birth cosmic signature */}
+      {/* Personal season message */}
       {userBirthInfo && (
         <>
-          <p style={{ ...lbl, marginBottom: S.sm }}>Your birth</p>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: S.sm }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: S.xs }}>
-              <span style={{ fontSize: '18px', lineHeight: 1 }}>{userBirthInfo.westernSign.symbol}</span>
-              <span style={{ fontFamily: INTER, fontSize: '14px', fontWeight: 500, color: 'var(--ink)' }}>
-                {userBirthInfo.westernSign.name}
-              </span>
-            </div>
-            <Badge element={userBirthInfo.westernSign.element} />
-          </div>
-          <div style={{ borderTop: '1px solid var(--border)' }}>
-            <Row label="Planet" value={userBirthInfo.westernSign.planet} />
-            <Row label="Tarot"  value={userBirthInfo.westernSign.tarot} />
-            <Row label="Chinese year" value={`${userBirthInfo.chineseAnimal.glyph} ${userBirthInfo.chineseAnimal.name} · ${userBirthInfo.chineseAnimal.trait}`} />
-            <Row label="Element" value={`${userBirthInfo.chineseElement.name} · ${userBirthInfo.chineseElement.quality}`} />
-          </div>
-          {HR}
+          <p style={{ ...lbl, marginBottom: S.sm }}>Your season</p>
           <p style={{ fontFamily: INTER, fontSize: '13px', fontStyle: 'italic',
             color: 'var(--ink-mid)', lineHeight: 1.6, margin: 0 }}>
             {userBirthInfo.personalNote}

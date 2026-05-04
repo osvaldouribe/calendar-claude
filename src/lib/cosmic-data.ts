@@ -1,3 +1,5 @@
+import weeklyMessages from '@/data/weekly-messages.json';
+
 export type Element = 'fire' | 'earth' | 'air' | 'water';
 
 export interface ZodiacSign {
@@ -241,20 +243,28 @@ export interface UserBirthInfo {
   personalNote:    string; // birth element × current element
 }
 
+export function getWeekOfYear(date: Date): number {
+  const start = new Date(date.getFullYear(), 0, 1);
+  const dayOfYear = Math.floor((date.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+  return Math.min(Math.floor(dayOfYear / 7) + 1, 52);
+}
+
 export function getPersonalNote(birthElement: Element, seasonElement: Element): string {
   return ELEMENT_INTERACTIONS[birthElement][seasonElement];
 }
 
-export function getUserBirthInfo(birthDate: Date, currentElement: Element): UserBirthInfo {
+export function getUserBirthInfo(birthDate: Date, currentElement: Element, today: Date = new Date()): UserBirthInfo {
   const doy          = getDayOfYear(birthDate);
   const westernSign  = getZodiacForDay(doy);
   const year         = birthDate.getFullYear();
   const animalIndex  = ((year - 1900) % 12 + 12) % 12;
   const elementIndex = Math.floor((year % 10) / 2);
+  const week         = getWeekOfYear(today);
+  const weekly       = (weeklyMessages as Record<string, Record<string, string>>)[westernSign.name]?.[String(week)];
   return {
     westernSign,
     chineseAnimal:  CHINESE_ANIMALS[animalIndex],
     chineseElement: CHINESE_ELEMENTS[elementIndex],
-    personalNote:   ELEMENT_INTERACTIONS[westernSign.element][currentElement],
+    personalNote:   weekly ?? ELEMENT_INTERACTIONS[westernSign.element][currentElement],
   };
 }
