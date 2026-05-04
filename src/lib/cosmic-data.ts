@@ -127,18 +127,21 @@ export const FULL_MOONS: FullMoon[] = [
 
 export interface SolarEvent {
   name: string;
+  southName: string;
   month: number;
   day: number;
   season: string;
+  southSeason: string;
   description: string;
   elementAdvice: Record<Element, string>;
 }
 
 export const SOLAR_EVENTS: SolarEvent[] = [
   {
-    name: 'Spring Equinox',
+    name: 'Spring Equinox',       southName: 'Autumn Equinox',
     month: 3, day: 20,
-    season: 'Aries Season · Equal day and night',
+    season:      'Aries Season · Equal day and night',
+    southSeason: 'Libra Season · Equal day and night',
     description: 'Day and night meet in perfect balance before light takes the lead. Seeds stir beneath the soil — motion returns, the cycle of renewal begins.',
     elementAdvice: {
       fire:  'Your flame finds fresh fuel. The equinox amplifies new beginnings — plant one bold intention now before the momentum passes.',
@@ -148,9 +151,10 @@ export const SOLAR_EVENTS: SolarEvent[] = [
     },
   },
   {
-    name: 'Summer Solstice',
+    name: 'Summer Solstice',      southName: 'Winter Solstice',
     month: 6, day: 21,
-    season: 'Cancer Season · The longest day',
+    season:      'Cancer Season · The longest day',
+    southSeason: 'Capricorn Season · The longest night',
     description: 'The sun reaches its zenith. Light is at its absolute fullest. A threshold of power, abundance, and radiant energy — then the slow turn begins.',
     elementAdvice: {
       fire:  'The solstice amplifies your nature entirely. Lead, create, and shine — but tend to those around you; your brightness can burn as easily as it warms.',
@@ -160,9 +164,10 @@ export const SOLAR_EVENTS: SolarEvent[] = [
     },
   },
   {
-    name: 'Autumn Equinox',
+    name: 'Autumn Equinox',       southName: 'Spring Equinox',
     month: 9, day: 22,
-    season: 'Libra Season · Equal day and night',
+    season:      'Libra Season · Equal day and night',
+    southSeason: 'Aries Season · Equal day and night',
     description: 'Light and dark meet in equal measure before darkness takes the lead. A sacred threshold of gratitude, harvest, and deliberate release.',
     elementAdvice: {
       fire:  'The cooling season asks your fire to gather inward. Preserve your energy for the long arc ahead — this is a time to consolidate, not expand.',
@@ -172,9 +177,10 @@ export const SOLAR_EVENTS: SolarEvent[] = [
     },
   },
   {
-    name: 'Winter Solstice',
+    name: 'Winter Solstice',      southName: 'Summer Solstice',
     month: 12, day: 21,
-    season: 'Capricorn Season · The longest night',
+    season:      'Capricorn Season · The longest night',
+    southSeason: 'Cancer Season · The longest day',
     description: 'The darkest point — and the turning. After tonight, light begins its slow return. Stillness holds transformation. The year breathes.',
     elementAdvice: {
       fire:  'Winter tests your fire. Tend your inner flame rather than projecting outward. Ask: what truly burns at your core when everything else goes quiet?',

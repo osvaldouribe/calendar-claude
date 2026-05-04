@@ -15,6 +15,7 @@ interface Props {
   goals: GoalEvent[];
   zodiacSigns: ZodiacSign[];
   fullMoons: FullMoon[];
+  hemisphere: 'north' | 'south';
   isLoggedIn: boolean;
   userEmail: string | null;
   userName: string | null;
@@ -25,7 +26,7 @@ const INTER = "'Inter', system-ui, sans-serif";
 
 export default function DashboardClient({
   today, todayInfo, events: initialEvents, goals: initialGoals,
-  zodiacSigns, fullMoons, isLoggedIn, userEmail, userName, userBirthInfo,
+  zodiacSigns, fullMoons, hemisphere, isLoggedIn, userEmail, userName, userBirthInfo,
 }: Props) {
   const router = useRouter();
   const todayDate = new Date(today);
@@ -107,6 +108,7 @@ export default function DashboardClient({
       zodiacSigns={zodiacSigns}
       solarEvents={SOLAR_EVENTS}
       userElement={userBirthInfo?.westernSign.element ?? null}
+      hemisphere={hemisphere}
       selectedEventId={selectedEvent?.id ?? null}
       selectedGoalId={selectedGoal?.id ?? null}
       onEventClick={handleEventClick}

@@ -29,6 +29,7 @@ export interface CircularCalendarProps {
   zodiacSigns: ZodiacSign[];
   solarEvents?: SolarEvent[];
   userElement?: Element | null;
+  hemisphere?: 'north' | 'south';
   selectedEventId?: string | null;
   selectedGoalId?: string | null;
   onEventClick?: (event: CalendarEvent) => void;
@@ -116,15 +117,18 @@ const MONTH_DAYS = [31,28,31,30,31,30,31,31,30,31,30,31];
 // ── tooltip ───────────────────────────────────────────────────────────────────
 interface Tip {
   x: number; y: number;
+  isTouch: boolean;
   title: string;
   meta?: string;
   rows: { label: string; value: string }[];
   note?: string;
 }
 
+const TOOLTIP_W = 240;
+
 // ── component ─────────────────────────────────────────────────────────────────
 export default function CircularCalendar({
-  today, events, goals = [], fullMoons, zodiacSigns, solarEvents = [], userElement,
+  today, events, goals = [], fullMoons, zodiacSigns, solarEvents = [], userElement, hemisphere = 'north',
   selectedEventId, selectedGoalId, onEventClick, onGoalClick, onTodayClick,
 }: CircularCalendarProps) {
   const year       = today.getFullYear();
@@ -149,12 +153,16 @@ export default function CircularCalendar({
     i === 0 || s.name !== zodiacSigns[0].name
   );
 
-  // mouse helpers
-  const pos = useCallback((e: React.MouseEvent): { x: number; y: number } => {
+  // pointer helpers (work for both mouse and touch)
+  const pos = useCallback((e: { clientX: number; clientY: number; pointerType?: string }) => {
     const r = wrapRef.current?.getBoundingClientRect();
-    return r ? { x: e.clientX - r.left, y: e.clientY - r.top } : { x: 0, y: 0 };
+    const isTouch = e.pointerType === 'touch';
+    return r ? { x: e.clientX - r.left, y: e.clientY - r.top, isTouch } : { x: 0, y: 0, isTouch: false };
   }, []);
-  const move  = useCallback((e: React.MouseEvent) => setTip(t => t ? { ...t, ...pos(e) } : null), [pos]);
+  const move  = useCallback((e: React.PointerEvent) => {
+    if (e.pointerType === 'touch') return;
+    setTip(t => t ? { ...t, ...pos(e) } : null);
+  }, [pos]);
   const clear = useCallback(() => setTip(null), []);
 
   // ── renderers ────────────────────────────────────────────────────────────
@@ -165,7 +173,7 @@ export default function CircularCalendar({
       const a2 = dayToAngle(Math.min(sign.endDay, daysInYear) + 1, daysInYear);
       return (
         <g key={`z${i}`}
-          onMouseEnter={(e) => setTip({
+          onPointerEnter={(e) => setTip({
             ...pos(e),
             title: sign.name,
             meta: `${sign.element.charAt(0).toUpperCase() + sign.element.slice(1)} · ${sign.planet}`,
@@ -175,8 +183,8 @@ export default function CircularCalendar({
             ],
             note: sign.energyDescription,
           })}
-          onMouseMove={move}
-          onMouseLeave={clear}
+          onPointerMove={move}
+          onPointerLeave={clear}
           style={{ cursor: 'default' }}
         >
           {/* Subtle fill */}
@@ -225,14 +233,14 @@ export default function CircularCalendar({
         });
         return (
           <g key={moon.name + moon.date}
-            onMouseEnter={(e) => setTip({
+            onPointerEnter={(e) => setTip({
               ...pos(e),
               title: moon.name,
               rows: [{ label: 'Date', value: dateStr }],
               note: moon.description,
             })}
-            onMouseMove={move}
-            onMouseLeave={clear}
+            onPointerMove={move}
+            onPointerLeave={clear}
             style={{ cursor: 'default' }}
           >
             <circle cx={p.x} cy={p.y} r={9} fill="transparent" />
@@ -257,15 +265,15 @@ export default function CircularCalendar({
       return (
         <g key={ev.id} style={{ cursor: 'pointer' }}
           onClick={() => onEventClick?.(ev)}
-          onMouseEnter={(e) => setTip({
+          onPointerEnter={(e) => setTip({
             ...pos(e),
             title: ev.title,
             meta: `${sign.symbol} ${sign.name} · ${sign.element}`,
             rows: [{ label: 'Date', value: dateStr }],
             note: ev.description ?? undefined,
           })}
-          onMouseMove={move}
-          onMouseLeave={clear}
+          onPointerMove={move}
+          onPointerLeave={clear}
         >
           {active && <circle cx={p.x} cy={p.y} r={10} fill={EVENT_COLOR} opacity="0.15" />}
           <circle cx={p.x} cy={p.y} r={active ? 5.5 : 4}
@@ -288,15 +296,15 @@ export default function CircularCalendar({
       return (
         <g key={goal.id} style={{ cursor: 'pointer' }}
           onClick={() => onGoalClick?.(goal)}
-          onMouseEnter={(e) => setTip({
+          onPointerEnter={(e) => setTip({
             ...pos(e),
             title: goal.title,
             meta: `◆ Goal · ${dateStr}`,
             rows: [],
             note: goal.description ?? undefined,
           })}
-          onMouseMove={move}
-          onMouseLeave={clear}
+          onPointerMove={move}
+          onPointerLeave={clear}
         >
           {active && (
             <rect
@@ -317,24 +325,30 @@ export default function CircularCalendar({
   [goals, year, daysInYear, selectedGoalId, onGoalClick, pos, move, clear]);
 
   const renderSolarEvents = useCallback(() =>
-    solarEvents.map((event) => {
+    solarEvents.map((event, i) => {
       const doy  = getDayOfYear(new Date(year, event.month - 1, event.day));
       const a    = dayToAngle(doy, daysInYear);
       const base = polar(R.inner + 8, a);
       const tip_ = polar(R.outer, a);
       const dot  = polar(R.outer + 10, a);
-      const advice = userElement ? event.elementAdvice[userElement] : undefined;
+      // for southern hemisphere, the paired event (offset by 2) holds the correct
+      // season description and element advice for this physical date
+      const isSouth = hemisphere === 'south';
+      const src = isSouth ? solarEvents[(i + 2) % solarEvents.length] : event;
+      const displayName   = isSouth ? event.southName   : event.name;
+      const displaySeason = isSouth ? event.southSeason : event.season;
+      const advice = userElement ? src.elementAdvice[userElement] : undefined;
       return (
         <g key={event.name}
-          onMouseEnter={(e) => setTip({
+          onPointerEnter={(e) => setTip({
             ...pos(e),
-            title: event.name,
-            meta: event.season,
-            rows: [{ label: 'Date', value: `${MONTHS[event.month - 1]} ${event.day}` }],
-            note: advice ?? event.description,
+            title: displayName,
+            meta:  displaySeason,
+            rows:  [{ label: 'Date', value: `${MONTHS[event.month - 1]} ${event.day}` }],
+            note:  advice ?? src.description,
           })}
-          onMouseMove={move}
-          onMouseLeave={clear}
+          onPointerMove={move}
+          onPointerLeave={clear}
           style={{ cursor: 'default' }}
         >
           {/* fat invisible hit area */}
@@ -350,7 +364,7 @@ export default function CircularCalendar({
         </g>
       );
     }),
-  [solarEvents, year, daysInYear, userElement, pos, move, clear]);
+  [solarEvents, hemisphere, year, daysInYear, userElement, pos, move, clear]);
 
   const renderToday = useCallback(() => {
     const tip_ = polar(R.outer, todayAngle);
@@ -370,9 +384,24 @@ export default function CircularCalendar({
     );
   }, [todayAngle, today, onTodayClick]);
 
-  // tooltip smart flip
-  const containerW = wrapRef.current?.offsetWidth ?? 400;
-  const flipX = tip ? tip.x > containerW * 0.58 : false;
+  // tooltip positioning — fixed width, clamped to container on all sides
+  const containerW = wrapRef.current?.offsetWidth  ?? 400;
+  const containerH = wrapRef.current?.offsetHeight ?? 400;
+  let tipLeft = 0, tipTop = 0;
+  if (tip) {
+    if (tip.isTouch) {
+      // center horizontally near the top so it's never under the finger
+      tipLeft = Math.max(8, (containerW - TOOLTIP_W) / 2);
+      tipTop  = 12;
+    } else {
+      // try right of cursor; fall back to left if it would clip
+      const rightEdge = tip.x + 14 + TOOLTIP_W;
+      tipLeft = rightEdge < containerW - 8 ? tip.x + 14 : tip.x - 14 - TOOLTIP_W;
+      // clamp horizontally and vertically inside the container
+      tipLeft = Math.max(8, Math.min(tipLeft, containerW - TOOLTIP_W - 8));
+      tipTop  = Math.max(8, Math.min(tip.y - 8, containerH - 160));
+    }
+  }
 
   return (
     <div ref={wrapRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -413,18 +442,18 @@ export default function CircularCalendar({
       {tip && (
         <div style={{
           position: 'absolute',
-          top: tip.y - 8,
-          left: flipX ? tip.x - 12 : tip.x + 12,
-          transform: flipX ? 'translateX(-100%)' : 'none',
+          top: tipTop,
+          left: tipLeft,
+          width: `${TOOLTIP_W}px`,
           background: INK,
           color: '#F7F5F0',
           borderRadius: '8px',
           padding: '12px 14px',
           pointerEvents: 'none',
           zIndex: 30,
-          maxWidth: '220px',
           boxShadow: '0 4px 24px rgba(0,0,0,0.2)',
           fontFamily: INTER,
+          boxSizing: 'border-box',
         }}>
           <p style={{ fontSize: '13px', fontWeight: 600, margin: '0 0 2px', color: '#F7F5F0' }}>
             {tip.title}

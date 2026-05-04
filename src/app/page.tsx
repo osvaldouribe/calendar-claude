@@ -94,6 +94,7 @@ export default async function HomePage() {
       goals={goals}
       zodiacSigns={ZODIAC_SIGNS}
       fullMoons={FULL_MOONS}
+      hemisphere={hemisphere}
       isLoggedIn={!!session?.user}
       userEmail={session?.user?.email ?? null}
       userName={session?.user?.name ?? null}
