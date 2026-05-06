@@ -3,13 +3,16 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
-const CreateSchema = z.object({
+const GoalFields = z.object({
   title:       z.string().min(1).max(200),
   description: z.string().max(1000).nullable().optional(),
   targetMonth: z.number().int().min(1).max(12),
   targetDay:   z.number().int().min(1).max(31),
   targetYear:  z.number().int().min(2000).max(2100),
 });
+
+const CreateSchema = GoalFields;
+const UpdateSchema = GoalFields.extend({ id: z.string() });
 
 export async function GET() {
   const session = await auth();
@@ -33,6 +36,24 @@ export async function POST(req: NextRequest) {
     data: { ...parsed.data, description: parsed.data.description ?? null, userId: session.user.id },
   });
   return NextResponse.json(goal, { status: 201 });
+}
+
+export async function PUT(req: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const parsed = UpdateSchema.safeParse(await req.json());
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+
+  const { id, ...data } = parsed.data;
+  const existing = await prisma.goal.findFirst({ where: { id, userId: session.user.id } });
+  if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+  const goal = await prisma.goal.update({
+    where: { id },
+    data: { ...data, description: data.description ?? null },
+  });
+  return NextResponse.json(goal);
 }
 
 export async function DELETE(req: NextRequest) {

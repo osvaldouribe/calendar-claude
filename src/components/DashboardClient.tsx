@@ -99,6 +99,45 @@ export default function DashboardClient({
     }
   }, [router]);
 
+  const handleEditGoal = useCallback(async (id: string, data: {
+    title: string; description: string | null;
+    targetMonth: number; targetDay: number; targetYear: number;
+  }) => {
+    const res = await fetch('/api/goals', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...data }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setGoals(prev => prev.map(g => g.id === id ? {
+        id:          updated.id,
+        title:       updated.title,
+        targetMonth: updated.targetMonth,
+        targetDay:   updated.targetDay,
+        targetYear:  updated.targetYear,
+        description: updated.description,
+      } : g));
+      setSelectedGoal(updated);
+      router.refresh();
+    }
+  }, [router]);
+
+  const handleDeleteGoal = useCallback(async (id: string) => {
+    const res = await fetch('/api/goals', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    if (res.ok) {
+      setGoals(prev => prev.filter(g => g.id !== id));
+      setSelectedGoal(null);
+      setSelectedEvent(null);
+      setSheetOpen(false);
+      router.refresh();
+    }
+  }, [router]);
+
   const calendarEl = (
     <CircularCalendar
       today={todayDate}
@@ -127,6 +166,8 @@ export default function DashboardClient({
       goals={goals}
       onAddDate={handleAddDate}
       onAddGoal={handleAddGoal}
+      onEditGoal={handleEditGoal}
+      onDeleteGoal={handleDeleteGoal}
       onClearSelection={handleClearSelection}
       userBirthInfo={userBirthInfo}
     />

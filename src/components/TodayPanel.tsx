@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import type { TodayInfo, UserBirthInfo, Element } from '@/lib/cosmic-data';
 import { ELEMENT_COLORS, getTodayInfo, getPersonalNote } from '@/lib/cosmic-data';
 import type { CalendarEvent, GoalEvent } from './CircularCalendar';
@@ -46,6 +46,8 @@ interface TodayPanelProps {
   goals?: GoalEvent[];
   onAddDate?: (data: { label: string; month: number; day: number; year: number | null }) => Promise<void>;
   onAddGoal?: (data: { title: string; description: string | null; targetMonth: number; targetDay: number; targetYear: number }) => Promise<void>;
+  onEditGoal?: (id: string, data: { title: string; description: string | null; targetMonth: number; targetDay: number; targetYear: number }) => Promise<void>;
+  onDeleteGoal?: (id: string) => Promise<void>;
   onClearSelection?: () => void;
   userBirthInfo?: UserBirthInfo | null;
 }
@@ -149,11 +151,15 @@ const selectStyle: React.CSSProperties = {
 // ── main component ────────────────────────────────────────────────────────────
 export default function TodayPanel({
   today, todayInfo, selectedEvent, selectedGoal,
-  isLoggedIn, goals = [], onAddDate, onAddGoal, onClearSelection, userBirthInfo,
+  isLoggedIn, goals = [], onAddDate, onAddGoal, onEditGoal, onDeleteGoal, onClearSelection, userBirthInfo,
 }: TodayPanelProps) {
   const [entryType, setEntryType] = useState<EntryType>('reminder');
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving]       = useState(false);
+  const [editingGoal, setEditingGoal] = useState(false);
+  const [editGoalForm, setEditGoalForm] = useState({
+    title: '', description: '', month: 1, day: 1, year: '',
+  });
 
   const [reminderForm, setReminderForm] = useState({
     label: '', month: today.getMonth() + 1, day: today.getDate(), year: '',
@@ -162,6 +168,8 @@ export default function TodayPanel({
     title: '', description: '',
     month: today.getMonth() + 1, day: today.getDate(), year: String(today.getFullYear()),
   });
+
+  useEffect(() => { setEditingGoal(false); }, [selectedGoal?.id]);
 
   const closeModal = () => {
     setReminderForm({ label: '', month: today.getMonth() + 1, day: today.getDate(), year: '' });
@@ -198,6 +206,41 @@ export default function TodayPanel({
     closeModal();
   };
 
+  const handleEditClick = () => {
+    if (!selectedGoal) return;
+    setEditGoalForm({
+      title:       selectedGoal.title,
+      description: selectedGoal.description ?? '',
+      month:       selectedGoal.targetMonth,
+      day:         selectedGoal.targetDay,
+      year:        String(selectedGoal.targetYear),
+    });
+    setEditingGoal(true);
+  };
+
+  const submitEditGoal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedGoal || !editGoalForm.title || !editGoalForm.year) return;
+    setSaving(true);
+    await onEditGoal?.(selectedGoal.id, {
+      title:       editGoalForm.title,
+      description: editGoalForm.description || null,
+      targetMonth: editGoalForm.month,
+      targetDay:   editGoalForm.day,
+      targetYear:  parseInt(editGoalForm.year),
+    });
+    setEditingGoal(false);
+    setSaving(false);
+  };
+
+  const handleDeleteGoal = async () => {
+    if (!selectedGoal) return;
+    if (!window.confirm(`Delete "${selectedGoal.title}"?`)) return;
+    setSaving(true);
+    await onDeleteGoal?.(selectedGoal.id);
+    setSaving(false);
+  };
+
   const { zodiac, element, energyDescription, season, nextFullMoon } = todayInfo;
   const elementColors = ELEMENT_COLORS[element];
   const currentYearGoals = goals
@@ -210,6 +253,55 @@ export default function TodayPanel({
     const days = daysUntil(selectedGoal.targetMonth, selectedGoal.targetDay, selectedGoal.targetYear);
     const deadlineStr = deadline.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     const daysLabel = days > 0 ? `${days} days remaining` : days === 0 ? 'Due today' : 'Deadline passed';
+
+    if (editingGoal) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: S.md }}>
+          <button onClick={() => setEditingGoal(false)} style={{
+            fontFamily: INTER, fontSize: '13px', color: 'var(--ink-light)',
+            background: 'none', border: 'none', cursor: 'pointer',
+            padding: 0, textAlign: 'left', marginBottom: S.md,
+          }}>
+            ← Goal
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: S.sm }}>
+            <DiamondIcon />
+            <span style={lbl}>Edit Goal</span>
+          </div>
+          <form onSubmit={submitEditGoal} style={{ display: 'flex', flexDirection: 'column', gap: S.xs }}>
+            <input
+              type="text" required placeholder="What do you want to achieve?"
+              value={editGoalForm.title}
+              onChange={e => setEditGoalForm(p => ({ ...p, title: e.target.value }))}
+              style={inputStyle}
+            />
+            <textarea
+              placeholder="Description (optional)"
+              value={editGoalForm.description}
+              onChange={e => setEditGoalForm(p => ({ ...p, description: e.target.value }))}
+              rows={2}
+              style={{ ...inputStyle, resize: 'none', lineHeight: 1.5 }}
+            />
+            <p style={{ ...lbl, marginBottom: 0 }}>Deadline</p>
+            <div style={{ display: 'flex', gap: S.xs }}>
+              <select value={editGoalForm.month} onChange={e => setEditGoalForm(p => ({ ...p, month: parseInt(e.target.value) }))} style={selectStyle}>
+                {MONTH_NAMES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+              </select>
+              <select value={editGoalForm.day} onChange={e => setEditGoalForm(p => ({ ...p, day: parseInt(e.target.value) }))} style={selectStyle}>
+                {Array.from({ length: 31 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+              <input type="number" required placeholder="Year" min={today.getFullYear()} max={2100}
+                value={editGoalForm.year}
+                onChange={e => setEditGoalForm(p => ({ ...p, year: e.target.value }))}
+                style={{ ...selectStyle, flex: 1 }}
+              />
+            </div>
+            <FormActions saving={saving} onCancel={() => setEditingGoal(false)} />
+          </form>
+          <div style={{ marginTop: 'auto', paddingTop: S.lg }}><Attribution /></div>
+        </div>
+      );
+    }
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: S.md }}>
@@ -254,6 +346,32 @@ export default function TodayPanel({
             {selectedGoal.description}
           </p></>
         )}
+        <Divider />
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={handleEditClick}
+            style={{
+              flex: 1, fontSize: '13px', fontWeight: 500,
+              background: 'var(--ink)', color: '#fff', border: 'none',
+              borderRadius: '5px', padding: '10px', cursor: 'pointer',
+              fontFamily: INTER,
+            }}
+          >
+            Edit
+          </button>
+          <button
+            onClick={handleDeleteGoal}
+            disabled={saving}
+            style={{
+              padding: '10px 14px', fontSize: '13px', background: 'none',
+              border: '1px solid var(--border)', borderRadius: '5px',
+              color: 'var(--ink-light)', cursor: 'pointer',
+              fontFamily: INTER, opacity: saving ? 0.5 : 1,
+            }}
+          >
+            Delete
+          </button>
+        </div>
         <div style={{ marginTop: 'auto', paddingTop: S.lg }}><Attribution /></div>
       </div>
     );
